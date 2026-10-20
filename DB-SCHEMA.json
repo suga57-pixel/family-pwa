@@ -1,0 +1,973 @@
+{
+  "enums": null,
+  "tables": [
+    {
+      "name": "categories",
+      "grants": [
+        {
+          "role": "postgres",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "postgres",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "postgres",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "postgres",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "anon",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "anon",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "anon",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "anon",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "anon",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "service_role",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "service_role",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "service_role",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "service_role",
+          "privilege": "TRIGGER"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "household_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "color",
+          "type": "text",
+          "default": "'#64748b'::text",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "type",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "integer",
+          "default": "0",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        }
+      ],
+      "policies": [
+        {
+          "cmd": "DELETE",
+          "qual": "is_household_member(household_id)",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "categories",
+          "permissive": "PERMISSIVE",
+          "policyname": "categories_delete",
+          "schemaname": "public",
+          "with_check": null
+        },
+        {
+          "cmd": "INSERT",
+          "qual": null,
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "categories",
+          "permissive": "PERMISSIVE",
+          "policyname": "categories_insert",
+          "schemaname": "public",
+          "with_check": "is_household_member(household_id)"
+        },
+        {
+          "cmd": "SELECT",
+          "qual": "is_household_member(household_id)",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "categories",
+          "permissive": "PERMISSIVE",
+          "policyname": "categories_select",
+          "schemaname": "public",
+          "with_check": null
+        },
+        {
+          "cmd": "UPDATE",
+          "qual": "is_household_member(household_id)",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "categories",
+          "permissive": "PERMISSIVE",
+          "policyname": "categories_update",
+          "schemaname": "public",
+          "with_check": "is_household_member(household_id)"
+        }
+      ],
+      "triggers": [
+        "CREATE TRIGGER trg_categories_protect_type BEFORE UPDATE ON categories FOR EACH ROW EXECUTE FUNCTION protect_category_type()"
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "categories_color_check",
+          "definition": "CHECK (color ~ '^#[0-9A-Fa-f]{6}$'::text)"
+        },
+        {
+          "name": "categories_household_id_fkey",
+          "definition": "FOREIGN KEY (household_id) REFERENCES households(id)"
+        },
+        {
+          "name": "categories_household_id_type_name_key",
+          "definition": "UNIQUE (household_id, type, name)"
+        },
+        {
+          "name": "categories_id_household_id_key",
+          "definition": "UNIQUE (id, household_id)"
+        },
+        {
+          "name": "categories_name_check",
+          "definition": "CHECK (char_length(TRIM(BOTH FROM name)) >= 1 AND char_length(TRIM(BOTH FROM name)) <= 50)"
+        },
+        {
+          "name": "categories_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "categories_type_check",
+          "definition": "CHECK (type = ANY (ARRAY['event'::text, 'note'::text]))"
+        }
+      ],
+      "rls_enabled": true
+    },
+    {
+      "name": "events",
+      "grants": [
+        {
+          "role": "postgres",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "postgres",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "postgres",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "postgres",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "anon",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "anon",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "anon",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "anon",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "anon",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "service_role",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "service_role",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "service_role",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "service_role",
+          "privilege": "TRIGGER"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "household_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "category_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "default": "''::text",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "all_day",
+          "type": "boolean",
+          "default": "false",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "updated_by",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "default": "1",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        }
+      ],
+      "policies": [
+        {
+          "cmd": "DELETE",
+          "qual": "is_household_member(household_id)",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "events",
+          "permissive": "PERMISSIVE",
+          "policyname": "events_delete",
+          "schemaname": "public",
+          "with_check": null
+        },
+        {
+          "cmd": "INSERT",
+          "qual": null,
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "events",
+          "permissive": "PERMISSIVE",
+          "policyname": "events_insert",
+          "schemaname": "public",
+          "with_check": "is_household_member(household_id)"
+        },
+        {
+          "cmd": "SELECT",
+          "qual": "is_household_member(household_id)",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "events",
+          "permissive": "PERMISSIVE",
+          "policyname": "events_select",
+          "schemaname": "public",
+          "with_check": null
+        },
+        {
+          "cmd": "UPDATE",
+          "qual": "is_household_member(household_id)",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "events",
+          "permissive": "PERMISSIVE",
+          "policyname": "events_update",
+          "schemaname": "public",
+          "with_check": "is_household_member(household_id)"
+        }
+      ],
+      "triggers": [
+        "CREATE TRIGGER trg_events_creation_metadata BEFORE INSERT ON events FOR EACH ROW EXECUTE FUNCTION set_creation_metadata()",
+        "CREATE TRIGGER trg_events_update_metadata BEFORE UPDATE ON events FOR EACH ROW EXECUTE FUNCTION set_update_metadata()",
+        "CREATE TRIGGER trg_events_validate_category BEFORE INSERT OR UPDATE ON events FOR EACH ROW EXECUTE FUNCTION validate_category_type()"
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "events_category_fk",
+          "definition": "FOREIGN KEY (category_id, household_id) REFERENCES categories(id, household_id)"
+        },
+        {
+          "name": "events_created_by_fkey",
+          "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "events_household_id_fkey",
+          "definition": "FOREIGN KEY (household_id) REFERENCES households(id)"
+        },
+        {
+          "name": "events_pkey",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "events_title_check",
+          "definition": "CHECK (char_length(TRIM(BOTH FROM title)) >= 1 AND char_length(TRIM(BOTH FROM title)) <= 200)"
+        },
+        {
+          "name": "events_updated_by_fkey",
+          "definition": "FOREIGN KEY (updated_by) REFERENCES auth.users(id)"
+        },
+        {
+          "name": "events_valid_dates",
+          "definition": "CHECK (ends_at >= starts_at)"
+        },
+        {
+          "name": "events_version_check",
+          "definition": "CHECK (version >= 1)"
+        }
+      ],
+      "rls_enabled": true
+    },
+    {
+      "name": "household_members",
+      "grants": [
+        {
+          "role": "postgres",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "postgres",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "postgres",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "postgres",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "anon",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "anon",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "anon",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "anon",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "anon",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "service_role",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "service_role",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "service_role",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "service_role",
+          "privilege": "TRIGGER"
+        }
+      ],
+      "columns": [
+        {
+          "name": "household_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "default": null,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        }
+      ],
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "is_household_member(household_id)",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "household_members",
+          "permissive": "PERMISSIVE",
+          "policyname": "members_can_view_members",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": null,
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "household_members_household_id_fkey",
+          "definition": "FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "household_members_pkey",
+          "definition": "PRIMARY KEY (household_id, user_id)"
+        },
+        {
+          "name": "household_members_user_id_fkey",
+          "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+        }
+      ],
+      "rls_enabled": true
+    },
+    {
+      "name": "households",
+      "grants": [
+        {
+          "role": "postgres",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "postgres",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "postgres",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "postgres",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "postgres",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "anon",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "anon",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "anon",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "anon",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "anon",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "anon",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "authenticated",
+          "privilege": "TRIGGER"
+        },
+        {
+          "role": "service_role",
+          "privilege": "INSERT"
+        },
+        {
+          "role": "service_role",
+          "privilege": "SELECT"
+        },
+        {
+          "role": "service_role",
+          "privilege": "UPDATE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "DELETE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "role": "service_role",
+          "privilege": "REFERENCES"
+        },
+        {
+          "role": "service_role",
+          "privilege": "TRIGGER"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "default": null,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        }
+      ],
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "is_household_member(id)",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "households",
+          "permissive": "PERMISSIVE",
+          "policyname": "members_can_view_household",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": null,
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "households_pkey",
+          "definition": "PRIMARY KEY (id)"
+        }
+      ],
+      "rls_enabled": true
+    }
+  ],
+  "realtime": [
+    {
+      "pubname": "supabase_realtime",
+      "attnames": [
+        "id",
+        "household_id",
+        "name",
+        "color",
+        "type",
+        "sort_order",
+        "created_at"
+      ],
+      "rowfilter": null,
+      "tablename": "categories",
+      "schemaname": "public"
+    },
+    {
+      "pubname": "supabase_realtime",
+      "attnames": [
+        "id",
+        "household_id",
+        "category_id",
+        "title",
+        "description",
+        "starts_at",
+        "ends_at",
+        "all_day",
+        "created_by",
+        "updated_by",
+        "created_at",
+        "updated_at",
+        "deleted_at",
+        "version"
+      ],
+      "rowfilter": null,
+      "tablename": "events",
+      "schemaname": "public"
+    }
+  ],
+  "functions": [
+    "CREATE OR REPLACE FUNCTION public.set_update_metadata()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nDECLARE\r\n    v_user_id uuid;\r\nBEGIN\r\n    v_user_id := auth.uid();\r\n\r\n    IF v_user_id IS NULL THEN\r\n        RAISE EXCEPTION\r\n            'ログインユーザーを確認できません';\r\n    END IF;\r\n\r\n    NEW.updated_at := now();\r\n    NEW.version := OLD.version + 1;\r\n\r\n    NEW.created_at := OLD.created_at;\r\n    NEW.created_by := OLD.created_by;\r\n    NEW.household_id := OLD.household_id;\r\n\r\n    NEW.updated_by := v_user_id;\r\n\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+    "CREATE OR REPLACE FUNCTION public.is_household_member(p_household_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\r\n    SELECT EXISTS (\r\n        SELECT 1\r\n        FROM public.household_members AS hm\r\n        WHERE hm.household_id = p_household_id\r\n          AND hm.user_id = (SELECT auth.uid())\r\n    );\r\n$function$\n",
+    "CREATE OR REPLACE FUNCTION public.validate_category_type()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nDECLARE\r\n    v_type text;\r\n    v_expected text;\r\nBEGIN\r\n    IF NEW.category_id IS NULL THEN\r\n        RETURN NEW;\r\n    END IF;\r\n\r\n    IF TG_TABLE_NAME = 'events' THEN\r\n        v_expected := 'event';\r\n    ELSE\r\n        v_expected := 'note';\r\n    END IF;\r\n\r\n    SELECT type INTO v_type\r\n    FROM public.categories\r\n    WHERE id = NEW.category_id\r\n      AND household_id = NEW.household_id\r\n    FOR SHARE;\r\n\r\n    IF v_type IS DISTINCT FROM v_expected THEN\r\n        RAISE EXCEPTION\r\n            'カテゴリーの種類が一致しません';\r\n    END IF;\r\n\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+    "CREATE OR REPLACE FUNCTION public.protect_category_type()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nBEGIN\r\n    IF NEW.household_id IS DISTINCT FROM OLD.household_id THEN\r\n        RAISE EXCEPTION\r\n            'カテゴリーの所属グループは変更できません';\r\n    END IF;\r\n\r\n    IF NEW.type IS DISTINCT FROM OLD.type THEN\r\n        IF EXISTS (\r\n            SELECT 1 FROM public.events\r\n            WHERE category_id = OLD.id\r\n        ) OR EXISTS (\r\n            SELECT 1 FROM public.notes\r\n            WHERE category_id = OLD.id\r\n        ) THEN\r\n            RAISE EXCEPTION\r\n                '使用中カテゴリーの種類は変更できません';\r\n        END IF;\r\n    END IF;\r\n\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+    "CREATE OR REPLACE FUNCTION public.set_creation_metadata()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\r\nDECLARE\r\n    v_user_id uuid;\r\nBEGIN\r\n    v_user_id := auth.uid();\r\n\r\n    -- ログインしていない場合は拒否\r\n    IF v_user_id IS NULL THEN\r\n        RAISE EXCEPTION\r\n            'ログインユーザーを確認できません';\r\n    END IF;\r\n\r\n    NEW.created_by := v_user_id;\r\n    NEW.updated_by := v_user_id;\r\n    NEW.created_at := now();\r\n    NEW.updated_at := now();\r\n    NEW.version := 1;\r\n\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
+  ]
+}

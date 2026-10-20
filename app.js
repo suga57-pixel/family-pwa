@@ -9,7 +9,7 @@
   let client;
   let session = null;
   let busy = false;
-  let month = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const calendar = new window.FamilyCalendar();
   const storage = {
     get(key) { try { return localStorage.getItem(key); } catch { return null; } },
     set(key, value) { try { localStorage.setItem(key, value); } catch { /* 配色保存不可でも操作継続 */ } }
@@ -34,6 +34,7 @@
   function showSession(next) {
     const wasLoggedIn = !!session;
     session = next;
+    calendar.setSession(client, next);
     $('loading').hidden = true;
     $('login').hidden = !!session;
     $('app').hidden = !session;
@@ -68,37 +69,6 @@
   document.querySelectorAll('[data-view]').forEach(button => {
     button.addEventListener('click', () => selectView(button.dataset.view));
   });
-  function renderMonth() {
-    $('month-label').textContent = `${month.getFullYear()}年 ${month.getMonth() + 1}月`;
-    const grid = $('calendar-grid');
-    grid.replaceChildren();
-    const today = new Date();
-    const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-    ['日', '月', '火', '水', '木', '金', '土'].forEach((name, i) => {
-      const label = document.createElement('div');
-      label.className = `weekday ${i === 0 ? 'sunday' : i === 6 ? 'saturday' : ''}`;
-      label.textContent = name;
-      grid.append(label);
-    });
-    const start = new Date(month.getFullYear(), month.getMonth(), 1 - month.getDay());
-    for (let i = 0; i < 42; i++) {
-      const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-      const cell = document.createElement('div');
-      const isToday = sameDay(date, today);
-      cell.className = `day${date.getMonth() !== month.getMonth() ? ' outside' : ''}${date.getDay() === 0 ? ' sunday' : date.getDay() === 6 ? ' saturday' : ''}${isToday ? ' today' : ''}`;
-      const time = document.createElement('time');
-      time.dateTime = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      time.textContent = String(date.getDate());
-      time.setAttribute('aria-label', `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日${isToday ? ' 今日' : ''}`);
-      if (isToday) time.setAttribute('aria-current', 'date');
-      cell.append(time);
-      grid.append(cell);
-    }
-  }
-  $('previous-month').addEventListener('click', () => { month = new Date(month.getFullYear(), month.getMonth() - 1, 1); renderMonth(); });
-  $('next-month').addEventListener('click', () => { month = new Date(month.getFullYear(), month.getMonth() + 1, 1); renderMonth(); });
-  $('today').addEventListener('click', () => { month = new Date(new Date().getFullYear(), new Date().getMonth(), 1); renderMonth(); });
-  renderMonth();
   $('show-password').addEventListener('click', () => {
     const show = $('password').type === 'password';
     $('password').type = show ? 'text' : 'password';
@@ -107,11 +77,11 @@
   });
   function updateConnection() {
     $('connection').hidden = navigator.onLine;
-    if (navigator.onLine) renderMonth();
+
   }
   window.addEventListener('online', updateConnection);
   window.addEventListener('offline', updateConnection);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) renderMonth(); });
+
   updateConnection();
   $('login-form').addEventListener('submit', async event => {
     event.preventDefault();

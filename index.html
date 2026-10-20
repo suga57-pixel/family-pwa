@@ -15,10 +15,14 @@
   <link rel="stylesheet" href="./styles.css">
   <script src="./config.js" defer></script>
   <script src="./vendor/supabase.js" defer></script>
+  <link rel="stylesheet" href="./calendar.css">
+  <script src="./calendar-core.js" defer></script>
+  <script src="./calendar-store.js" defer></script>
+  <script src="./calendar.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
-  <div id="connection" class="connection" role="status" hidden>オフラインです。ログインにはインターネット接続が必要です。</div>
+  <div id="connection" class="connection" role="status" hidden>オフラインです。予定の取得・保存にはインターネット接続が必要です。</div>
   <div class="top-tools"><button id="theme" class="quiet" type="button" aria-label="配色を切り替え">配色：自動</button></div>
   <main id="loading" class="loading" role="status">Familyを開いています…</main>
   <main id="login" class="login-layout" hidden>
@@ -27,8 +31,33 @@
   </main>
   <div id="app" class="app-layout" hidden>
     <aside class="sidebar"><a class="brand" href="./"><span class="brand-icon">f.</span>Family</a><p class="sidebar-caption">ふたりの暮らし</p><nav aria-label="メインナビゲーション"><button data-view="calendar" aria-current="page"><span>▦</span>カレンダー</button><button data-view="notes"><span>▤</span>メモ帳</button><button data-view="checklists"><span>☑</span>チェックリスト</button></nav><div class="account"><span class="avatar">F</span><div><strong>マイアカウント</strong><p id="account-email"></p></div><button id="logout" class="quiet" type="button">ログアウト</button></div></aside>
-    <main class="workspace"><header class="page-header"><div><span class="eyebrow">YOUR SHARED SPACE</span><h1 id="page-title">カレンダー</h1><p id="page-subtitle" class="muted">ふたりの予定を、ひと目で。</p></div><span class="phase">第1段階 · 基本画面</span></header><p id="app-error" class="error" role="alert" hidden></p>
-      <section id="calendar" aria-label="カレンダー"><div class="calendar-toolbar"><h2 id="month-label"></h2><div class="calendar-controls"><button id="today" class="quiet">今日</button><button id="previous-month" class="quiet" aria-label="前の月">‹</button><button id="next-month" class="quiet" aria-label="次の月">›</button></div></div><div class="calendar-scroll"><div class="calendar-grid" id="calendar-grid"></div></div><p class="section-hint">予定の登録・共有は、次の開発段階で使えるようになります。</p></section>
+    <main class="workspace"><header class="page-header"><div><span class="eyebrow">YOUR SHARED SPACE</span><h1 id="page-title">カレンダー</h1><p id="page-subtitle" class="muted">ふたりの予定を、ひと目で。</p></div><span class="phase">第2段階 · カレンダー</span></header><p id="app-error" class="error" role="alert" hidden></p>
+      <section id="calendar" aria-label="カレンダー">
+        <div class="calendar-topline"><label class="household-label">共有グループ<select id="household-select" aria-label="共有グループ" disabled></select></label><span id="sync-status" role="status" aria-live="polite">接続を確認しています…</span><button id="refresh-calendar" class="quiet" type="button">再取得</button></div>
+        <div class="calendar-toolbar"><h2 id="month-label"></h2><div class="calendar-controls"><button id="today" class="quiet" type="button">今日</button><button id="previous-month" class="quiet" type="button" aria-label="前の期間">‹</button><button id="next-month" class="quiet" type="button" aria-label="次の期間">›</button></div></div>
+        <div class="calendar-actions"><div class="view-tabs" role="group" aria-label="カレンダーの表示"><button data-calendar-mode="month" aria-pressed="true" type="button">月</button><button data-calendar-mode="week" aria-pressed="false" type="button">週</button><button data-calendar-mode="day" aria-pressed="false" type="button">日</button></div><button id="new-event" class="primary compact" type="button" disabled>＋ 予定を作成</button></div>
+        <div class="calendar-filters"><label>予定を検索<input id="event-search" type="search" placeholder="タイトル・詳細を検索（全期間）"></label><label>カテゴリ<select id="category-filter"><option value="">すべて</option></select></label><label class="check-label"><input id="show-trash" type="checkbox">ゴミ箱</label><button id="open-category" class="quiet" type="button" disabled>カテゴリ追加</button></div>
+        <p id="calendar-error" class="error calendar-message" role="alert" hidden></p>
+        <p id="calendar-notice" class="calendar-message" role="status" aria-live="polite"></p>
+        <div class="calendar-scroll"><div class="calendar-grid" id="calendar-grid"></div></div>
+        <div id="event-results" class="event-results" hidden></div>
+        <p class="section-hint">時刻は日本時間（JST）。日付を押すと予定を作成できます。終日の終了日は、その日を含みます。</p>
+      </section>
+      <dialog id="event-dialog" aria-labelledby="event-dialog-title">
+        <form id="event-form"><header class="dialog-heading"><div><span class="eyebrow">SHARED CALENDAR</span><h2 id="event-dialog-title">予定を作成</h2></div><button id="close-event" class="quiet" type="button" aria-label="予定を閉じる">閉じる</button></header>
+          <div id="remote-change" class="remote-change" role="status" hidden>この予定に変更があります。入力中の内容は保持しています。保存時に競合を確認します。</div>
+          <label for="event-title">タイトル</label><input id="event-title" required maxlength="200" autocomplete="off">
+          <label class="check-label"><input id="event-all-day" type="checkbox">終日</label>
+          <p class="field-hint">日本時間（JST）で入力。終日の終了日は、その日を含みます。</p>
+          <div class="date-pair"><div><label for="event-start-date">開始日</label><input id="event-start-date" type="date" required min="1900-01-01" max="9998-12-31"></div><div><label for="event-start-time">開始時刻</label><input id="event-start-time" type="time" required></div><div><label for="event-end-date">終了日</label><input id="event-end-date" type="date" required min="1900-01-01" max="9998-12-31"></div><div><label for="event-end-time">終了時刻</label><input id="event-end-time" type="time" required></div></div>
+          <label for="event-category">カテゴリ</label><select id="event-category"><option value="">未分類</option></select>
+          <label for="event-description">詳細</label><textarea id="event-description" rows="4"></textarea>
+          <p id="event-metadata" class="event-metadata"></p><p id="event-error" class="error" role="alert" hidden></p>
+          <section id="conflict-panel" class="conflict-panel" aria-label="更新の競合" hidden><h3>予定が変更されています</h3><p>今回の保存は行っていません。入力内容をコピーしてから最新の予定を開き直し、変更を確認してください。</p><pre id="conflict-latest"></pre><button id="load-latest" class="quiet" type="button">最新の内容を開く</button></section>
+          <div class="dialog-actions"><button id="delete-event" class="danger quiet" type="button" hidden>ゴミ箱へ</button><button id="restore-event" class="quiet" type="button" hidden>復元する</button><button id="save-event" class="primary compact" type="submit">保存する</button></div>
+        </form>
+      </dialog>
+      <dialog id="category-dialog" aria-labelledby="category-dialog-title"><form id="category-form"><header class="dialog-heading"><h2 id="category-dialog-title">カテゴリを追加</h2><button id="close-category" class="quiet" type="button">閉じる</button></header><label for="category-name">名前（1〜50文字）</label><input id="category-name" required maxlength="50"><label for="category-color">色</label><input id="category-color" type="color" value="#276858"><p id="category-error" class="error" role="alert" hidden></p><button id="save-category" class="primary" type="submit">追加する</button></form></dialog>
       <section id="notes" class="empty-panel" hidden><span class="empty-icon">▤</span><span class="eyebrow">A PLACE FOR YOUR IDEAS</span><h2>ふたりの「覚えておこう」を、ここに。</h2><p>大切なメモや、ふと思いついたこと。<br>次の開発段階で作成・共有できるようになります。</p><span class="coming">メモ機能は準備中です</span></section>
       <section id="checklists" class="empty-panel" hidden><span class="empty-icon">☑</span><span class="eyebrow">LITTLE THINGS, ALL TOGETHER</span><h2>やることを、ふたりでひとつずつ。</h2><p>買い物も、週末の準備も。<br>次の開発段階でリストを作成・共有できるようになります。</p><span class="coming">チェックリスト機能は準備中です</span></section>
       <footer>Family <span>暮らしを、いっしょに。</span></footer>

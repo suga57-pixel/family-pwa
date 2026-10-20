@@ -1,104 +1,86 @@
-# Family — 第1段階
+# Family — 第2段階：共有カレンダー
 
-夫婦で使う共有PWAのログイン画面と基本レイアウトです。HTML / CSS / JavaScriptのみ、ビルド不要。Supabaseや既存テーブルへの変更は実施していません。
+第1段階のHTML / CSS / JavaScriptと同梱Supabase JSを維持して共有カレンダーを追加しました。ビルド不要、GitHub Pagesのサブパスに対応する構成です。既存のSupabaseのテーブル・RLS・関数・トリガー・publicationは変更していません。
 
-## ファイル一覧
+## 実装内容
 
-| ファイル | 用途 |
+- 月表示（6週）、週表示（日曜始まりの日別リスト）、日表示、前後移動、今日への移動。
+- 日付から予定作成、詳細・編集、ゴミ箱への論理削除、復元。物理削除APIは呼びません。
+- 時刻付き、終日、複数日予定。端末の地域設定によらず日本時間（Asia/Tokyo）です。終日の終了日は画面ではその日を含み、DBでは翌日0時を終了として保存します。
+- 予定用カテゴリの選択・色分け、新規カテゴリの追加。カテゴリ名は1〜50文字。カテゴリ編集・削除は今回対象外。
+- タイトル・詳細の全期間検索、カテゴリ・未分類の絞り込み、ゴミ箱の全期間一覧。ページ分割で全件取得し、APIの1ページ上限で切り捨てません。
+- 作成者・更新者・時刻・version表示。氏名の列がないため「自分」「共有メンバー」とUUIDを表示します。相手のメールや氏名は取得しません。
+- events / categoriesのRealtime購読。再接続・オンライン復帰・画面復帰時の再取得、表示中は60秒ごとの補完取得、手動再取得。
+- 保存・削除・復元すべてでid / household_id / 読み込み時versionを条件として更新。versionや監査情報は既存トリガーが設定します。
+- 更新0件の場合は最新内容を表示し、上書きを止め、編集中の入力を保持します。新規作成の通信再送には同じUUIDを使い、二重作成を防ぎます。
+- アカウント・家族の切替後は古い通信結果を反映しません。家族データをlocalStorageやService Workerキャッシュには保存しません。
+- スマホは月マスの予定を3件＋残件数で表示し、残件数から日表示に移れます。週・日は時間軸ではなく日別一覧です。PC / iPad / スマホ向けCSS、配色切替、キーボード操作に対応しています。
+
+既存のログイン・セッション保持・ログアウトと、登録画面を設けない方針を引き継いでいます。メモとチェックリストは準備中の画面のままです。
+
+## ファイル
+
+| ファイル | 内容 |
 | --- | --- |
-| `index.html` | 日本語ログイン画面・ログイン後の基本画面 |
-| `styles.css` | PC / iPad / iPhone対応、ライト・ダーク・自動配色 |
-| `app.js` | Supabase Auth・認証状態切替・ナビゲーション・月カレンダー |
-| `config.js` | 公開用Supabase接続情報の設定 |
-| `manifest.webmanifest` | PWA情報・相対パスでの起動範囲 |
-| `sw.js` | アプリ本体のキャッシュ。APIと認証情報はキャッシュ対象外 |
-| `icons/icon.svg` | ブラウザ用アイコン |
-| `icons/icon-192.png` / `icon-512.png` | PWA用PNGアイコン |
-| `icons/apple-touch-icon.png` | iPhone / iPad用180pxアイコン |
-| `vendor/supabase.js` | Supabase JS 2.57.4のUMD版、ローカル同梱 |
-| `vendor/LICENSE` | Supabase JSのMITライセンス |
-| `.nojekyll` | GitHub Pages用 |
-| `README.md` | 本書 |
-| `TEST-RESULTS.md` | 確認結果と未確認事項 |
+| index.html | 認証画面、カレンダー、予定・カテゴリダイアログ |
+| app.js | 第1段階の認証・ナビゲーションとカレンダーへの認証通知 |
+| calendar-core.js | 日本時間、日付計算、表示期間、入力の変換 |
+| calendar-store.js | 確認済みの列で取得・作成・version条件付き更新 |
+| calendar.js | カレンダー画面、競合処理、Realtime、再取得 |
+| calendar.css / styles.css | カレンダーUI / 既存共通UI |
+| config.js | 公開用Project URLとpublishable / anon key |
+| sw.js | 静的資産だけのキャッシュ。番号をstage2-v1へ更新済み |
+| manifest.webmanifest / icons/ / .nojekyll | 既存のPWA・Pages関連 |
+| vendor/ | 第1段階と同じSupabase JS 2.57.4とライセンス |
+| DB-SCHEMA.json | ユーザー提供のDB定義。レコードデータは含みません |
+| TEST-GUIDE.md / TEST-RESULTS.md | 実機テスト手順 / 実施済み確認と未検証点 |
+| tests/ | Node.jsで再実行できる代替テスト。公開には不要 |
 
-## 実装済み
+## 接続情報
 
-- 登録済みメールアドレスとパスワードによるログイン（公開サインアップなし）
-- エラー表示、送信中の多重操作防止、パスワードの表示切替
-- Supabase標準のセッション保持・トークン自動更新・認証イベント監視
-- このブラウザのセッションを対象とするログアウト、他タブの認証変更への追従
-- 未ログイン時とログイン後の画面切替、ログアウト時のメール表示の消去
-- カレンダー・メモ帳・チェックリストの画面切替
-- 月表示の枠、前月・翌月・今日への移動、今日の強調（予定データはまだ読み込みません）
-- 日本語UI、レスポンシブ表示、モバイル下部ナビ、配色選択
-- PWA manifest・アイコン・Service Worker、オフライン状態の案内
+今回のconfig.jsには、第1段階の作業フォルダーにあった公開用設定を引き継ぎました。**現在ログインできている公開サイトのconfig.jsと異なる場合は、稼働中のconfig.jsをそのまま使用してください。** キーの作り直しは不要です。
 
-## 接続情報の設定場所
+ブラウザに置けるのはpublishable / anon keyだけです。既存の入力チェックはservice_role JWTとsb_secretキーを拒否します。パスワード・service_role・DB接続文字列は置かないでください。
 
-`config.js` の空文字を、ご自身のプロジェクトの公開用情報へ置き換えて保存してください。
+認証ストレージキーは既存と同じ `family-auth-<Supabaseホスト名>` です。同じ公開URL・Project URL・保存領域で更新すればセッションを引き継ぐ設計です。Safariとホーム画面PWAの両方で確認してください。
 
-```javascript
-window.FAMILY_CONFIG = Object.freeze({
-  supabaseUrl: 'https://YOUR_PROJECT_REF.supabase.co',
-  supabaseKey: 'YOUR_PUBLISHABLE_OR_ANON_KEY'
-});
+## GitHub Pages更新手順
+
+1. 現在のリポジトリのファイルをバックアップします。特に稼働中のconfig.jsを保存してください。
+2. ZIPを展開し、**Familyフォルダーの中身**を現在の公開元と同じ場所へ上書きします。公開元がmainのルートならindex.htmlがルートにある配置を維持し、Familyフォルダーをもう一段追加しないでください。
+3. 新規のcalendar関連4ファイル、sw.js、icons/、vendor/、.nojekyllを含めます。ドキュメント・tests/・DB-SCHEMA.jsonは公開動作に不要です。
+4. config.jsを稼働中のものと照合し、現在公開に使っているブランチへコミットします。Pages設定は変更不要です。
+5. GitHubのデプロイ完了後、[既存の公開URL](https://suga57-pixel.github.io/family-pwa/)を開き、「第2段階 · カレンダー」と月/週/日・予定作成ボタンを確認します。
+6. 旧画面なら、Safariの該当タブとホーム画面PWAをすべて閉じて開き直します。更新したService Workerの取得後、もう一度閉じて開く必要がある場合があります。セッション保持の確認前にサイトデータを消さないでください。
+7. TEST-GUIDE.mdに沿って夫婦・2端末で確認します。
+
+今回、GitHubへの書き込みや本番サイトの更新は実行していません。
+
+## 起動とテスト
+
+FamilyフォルダーをVS CodeのLive ServerなどのHTTPサーバーで開きます。file://で直接起動しないでください。PWAはHTTPSまたはlocalhostで使います。
+
+Node.jsがあれば、Familyフォルダーで次を実行できます。外部パッケージは不要です。
+
+```text
+node tests/core-store.cjs
+node tests/ui-auth.cjs
 ```
 
-Project URLは標準の `https://… .supabase.co` 形式（空白なし）、キーは `sb_publishable_…` またはJWT形式の `anon` キーに対応します。カスタムドメインは今回対象外です。
+## DBとの対応・範囲
 
-`service_role`、`sb_secret_…`、データベースのパスワードは絶対に配置しないでください。入力チェックは誤設定防止用で、キーが本物かどうかはログイン時にSupabaseが判断します。公開用キーはブラウザから閲覧できる前提です。アクセス制御は既存RLSが担当します。
+DB-SCHEMA.jsonを確認して実装しました。households.id/nameとhousehold_members.household_id/user_idを読み、本人の所属が確認できたグループを表示します。所属がない場合にテーブル作成やメンバー自動登録は行いません。
 
-接続情報が未設定の場合もログイン画面は開きますが、ログインボタンは無効になります。
+eventsはtitle（1〜200文字）、description、starts_at、ends_at、all_day、category_id、deleted_atを使用し、ends_at >= starts_atを検証します。category_idは同じ家族のtype='event'だけを選びます。監査情報とversionはset_creation_metadata / set_update_metadataに任せます。新規UUIDだけは再送の重複防止のためブラウザで発行します。
 
-### Supabase管理画面での作業
+categoriesにはversion列がないため、今回のUIは参照と追加だけです。name/color/type='event'/household_idを送信し、sort_orderはDB既定値を使います。
 
-この段階ではSQL実行・テーブル変更・RLS変更は不要です。接続情報が手元にない場合の最初の作業は、`family-pwa` プロジェクトの「Connect」で **Project URLが表示されることを確認する** ことです。キーそのものやパスワードをチャットへ貼る必要はありません。管理画面の案内が必要な場合は、この確認結果を受けてから次の1操作を案内します。
+RealtimeのDELETE通知はフィルタできないため、通知内容を画面に使わずRLS付き再取得のきっかけにだけ使います。RLS定義は確認しましたが、実ログインでの権限・実Realtime接続は今回実証していません。
 
-## 起動方法
+既存の終了=開始の予定も表示します。既存の終日データが「終了日23:59」などの場合、表示できますが、この画面から保存すると終了日翌日0時へ揃います。
 
-VS Codeでこの `Family` フォルダーを開き、Live Server等のローカルHTTPサーバーで `index.html` を開いてください。Pythonがインストール済みなら、フォルダー内で `py -m http.server 8000 --bind 127.0.0.1` を実行し、PCのブラウザで `http://127.0.0.1:8000/` にアクセスする方法もあります。
+検索はゴミ箱を含む家族の予定を全件取得後に行います。大規模データ向けのサーバー検索・仮想スクロールは含みません。通信失敗時は部分的な取得を成功扱いせず、再取得を案内します。保存結果不明の際は、入力をコピーして一覧と最新内容を確認してください。
 
-`file://` での直接起動は使わないでください。PWAはHTTPSまたはlocalhost上で利用します。ログインはインターネット接続が必要です。
+未実装：メモCRUD、チェックリストCRUD、JSONバックアップ、繰り返し、通知、オフライン保存、時間軸のドラッグ編集。
 
-## GitHub Pagesへの配置
-
-1. GitHubで公開用リポジトリを用意します。無料運用の標準構成はpublicリポジトリです。
-2. **Familyフォルダーの中身**をリポジトリのルートに配置します。`index.html` がルートにあること、`icons` と `vendor`、隠しファイル `.nojekyll` も含まれることを確認してください。
-3. GitHubのリポジトリで `Settings → Pages` を開きます。
-4. `Source: Deploy from a branch`、`Branch: main`、フォルダー `/(root)` を選び、保存します。ブランチ名は実際の配置先に合わせてください。
-5. 公開完了後に表示されるHTTPS URLへアクセスします。`https://ユーザー名.github.io/リポジトリ名/` のようなサブパスにも対応しています。
-6. 接続情報を設定済みなら、登録済みアカウントでログインします。
-
-ソースは公開されます。ソースやREADMEにメールアドレス、パスワード、秘密鍵を追記しないでください。今回GitHubへのアップロードや公開操作は行っていません。
-
-参考：[GitHub公式・公開元の設定](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
-
-## iPhone / iPadでアプリとして使う
-
-公開済みHTTPS URLをSafariで開き、「共有」から「ホーム画面に追加」を選択してください。端末側のOSバージョンによってメニューの表記が異なる場合があります。追加後のログイン状態はSafariのタブと別の保存領域になる場合があるため、ホーム画面側でログインしてください。
-
-## 保存・セキュリティ・更新
-
-- メールアドレス・パスワードを独自ログに保存しません。Supabase SDKがセッション用トークンをブラウザのlocalStorageへ保存します。これはログイン保持に必要です。共有PCでは使用後にログアウトしてください。
-- 本段階ではDBの読取・書込・Realtime購読は行いません。認証に成功すると基本画面を表示します。家族所属の読み取り・書き込み権限の実証は次段階です。
-- CSPでスクリプトの読み込みを同一配信元に限定。Supabaseクライアントは同梱しているため、CDNへの常時依存はありません。認証通信のみSupabaseへ送信します。
-- Service Workerは同じアプリ範囲の静的ファイルのみを保存。`config.js`、Supabase API、セッションや今後の家族データは保存対象外です。オフライン編集は実装していません。
-- オフラインで基本画面が開く場合もありますが、通信や認証の検証ができることを意味しません。アカウントのサーバー側状態はオンライン時のSupabase検証に従います。
-- 更新公開時は `sw.js` の `CACHE` 末尾を `v2` 等へ変更してください。開いているアプリをすべて閉じて開き直すと新バージョンへ移行します。SDK更新時はライセンスを保持し、認証の回帰確認を行ってください。
-- パスワードの変更・リセット、ユーザー管理は今回のUIに含めません。
-
-参考：[Supabase公式・Authとセッション保存](https://supabase.com/docs/reference/javascript/auth)
-
-## 動作確認
-
-構文・認証フローの代替テスト・配布ファイルの整合性を確認しました。詳細は `TEST-RESULTS.md` を参照してください。
-
-接続情報・実アカウントが提供されていないため、実Supabaseへのログイン、実セッション復元、SafariでのPWA追加・画面表示は未確認です。今回の環境ではローカルプレビューがタイムアウトしたため、ブラウザでの見た目・タッチ操作・Service Workerの実行確認も未完了です。
-
-## 未実装と次段階
-
-次段階では既存のテーブル定義・列名・RLSポリシーを確認してから、家族所属の取得、カテゴリ、予定CRUD（月・週・日、終日・複数日・検索）、メモ（`note_type` を使用、検索・ピン・自動保存・ゴミ箱・復元）、チェック項目（編集・状態・並び順・削除）を実装します。
-
-続いて作成者・更新者表示、versionによる更新競合検出と解決UI、4テーブルのRealtime購読と再接続後の再取得、JSONバックアップ・復元を追加します。最後に夫婦それぞれの実ログイン状態で読取・書込権限、所属外ユーザーの拒否、2端末同期、同時編集の競合を検証します。既存SQLやポリシーの変更が必要と判明した場合は、理由を説明し、管理画面操作を1ステップずつ確認して進めます。
-
-通知・オフライン編集・繰り返し予定は要件どおり対象外です。
+仕様参考：[Supabase公式・Realtime購読](https://supabase.com/docs/reference/javascript/on)、[Postgres Changes](https://supabase.com/docs/guides/realtime/postgres-changes)、[条件付き更新](https://supabase.com/docs/reference/javascript/update)。
