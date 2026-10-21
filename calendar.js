@@ -192,10 +192,15 @@
         const head = el('button', undefined, 'day-head'); head.type = 'button'; head.disabled = !this.ready || this.writing;
         const time = el('time', this.mode === 'month' ? Number(date.slice(8)).toString() : `${Number(date.slice(5,7))}/${Number(date.slice(8))}（${['日','月','火','水','木','金','土'][wd]}）`);
         time.dateTime = date; if (date === today) time.setAttribute('aria-current','date');
-        head.setAttribute('aria-label', `${dateLabel(date)}に予定を作成`); head.append(time);
-        head.addEventListener('click', () => this.openEvent(null, date)); cell.append(head);
+        head.setAttribute('aria-label', this.mode === 'month' ? `${dateLabel(date)}の予定を見る` : `${dateLabel(date)}に予定を作成`); head.append(time);
+        head.addEventListener('click', () => { if (this.mode === 'month') { this.mode = 'day'; this.anchor = date; this.render(); } else this.openEvent(null, date); }); cell.append(head);
         const matches = events.filter(e => C.overlaps(e, date));
-        const maximum = this.mode === 'month' ? 3 : Infinity;
+        if (this.mode === 'month') {
+          if (matches.length) head.append(el('span', `${matches.length}件`, 'day-count'));
+          head.setAttribute('aria-label', `${dateLabel(date)}、予定${matches.length}件。日表示を開く`);
+          grid.append(cell); continue;
+        }
+        const maximum = Infinity;
         for (const event of matches.slice(0,maximum)) cell.append(this.eventButton(event, date));
         if (matches.length > maximum) {
           const more = el('button', `ほか${matches.length-maximum}件`, 'more-events'); more.type = 'button';

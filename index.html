@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
   <meta name="theme-color" content="#276858">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Family">
@@ -26,11 +26,13 @@
   <link rel="stylesheet" href="./stage4.css">
   <script src="./backup-core.js" defer></script>
   <script src="./backup.js" defer></script>
+  <link rel="stylesheet" href="./mobile.css">
+  <script src="./layout.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
   <div id="connection" class="connection" role="status" hidden>オフラインです。データの取得・保存にはインターネット接続が必要です。</div>
-  <div class="top-tools"><button id="theme" class="quiet" type="button" aria-label="配色を切り替え">配色：自動</button></div>
+  <div class="top-tools"><button id="settings-open" class="quiet" type="button">設定</button><button id="theme" class="quiet" type="button" aria-label="配色を切り替え">配色：自動</button></div>
   <main id="loading" class="loading" role="status">Familyを開いています…</main>
   <main id="login" class="login-layout" hidden>
     <section class="intro"><a class="brand" href="./"><span class="brand-icon">f.</span>Family</a><div><span class="eyebrow">OUR EVERYDAY, TOGETHER</span><h1>ふたりの毎日を、<br>ひとつの場所に。</h1><p>予定も、思いつきも、買い物リストも。<br>暮らしのあれこれを、ふたりで共有。</p><div class="feature-tags"><span>▦ カレンダー</span><span>▤ メモ帳</span><span>☑ チェックリスト</span></div></div><small>小さなことから、いっしょに。</small></section>
@@ -42,7 +44,7 @@
       <section id="calendar" aria-label="カレンダー">
         <div class="calendar-topline"><label class="household-label">共有グループ<select id="household-select" aria-label="共有グループ" disabled></select></label><span id="sync-status" role="status" aria-live="polite">接続を確認しています…</span><button id="refresh-calendar" class="quiet" type="button">再取得</button></div>
         <div class="calendar-toolbar"><h2 id="month-label"></h2><div class="calendar-controls"><button id="today" class="quiet" type="button">今日</button><button id="previous-month" class="quiet" type="button" aria-label="前の期間">‹</button><button id="next-month" class="quiet" type="button" aria-label="次の期間">›</button></div></div>
-        <div class="calendar-actions"><div class="view-tabs" role="group" aria-label="カレンダーの表示"><button data-calendar-mode="month" aria-pressed="true" type="button">月</button><button data-calendar-mode="week" aria-pressed="false" type="button">週</button><button data-calendar-mode="day" aria-pressed="false" type="button">日</button></div><button id="new-event" class="primary compact" type="button" disabled>＋ 予定を作成</button></div>
+        <div class="calendar-actions"><div class="view-tabs" role="group" aria-label="カレンダーの表示"><button data-calendar-mode="month" aria-pressed="true" type="button">月</button><button data-calendar-mode="week" aria-pressed="false" type="button">週</button><button data-calendar-mode="day" aria-pressed="false" type="button">日</button></div><button id="new-event" class="primary compact" type="button" disabled>＋ 予定</button></div>
         <div class="calendar-filters"><label>予定を検索<input id="event-search" type="search" placeholder="タイトル・詳細を検索（全期間）"></label><label>カテゴリ<select id="category-filter"><option value="">すべて</option></select></label><label class="check-label"><input id="show-trash" type="checkbox">ゴミ箱</label><button id="open-category" class="quiet" type="button" disabled>カテゴリ追加</button></div>
         <p id="calendar-error" class="error calendar-message" role="alert" hidden></p>
         <p id="calendar-notice" class="calendar-message" role="status" aria-live="polite"></p>
@@ -67,12 +69,12 @@
       <dialog id="category-dialog" aria-labelledby="category-dialog-title"><form id="category-form"><header class="dialog-heading"><h2 id="category-dialog-title">カテゴリを追加</h2><button id="close-category" class="quiet" type="button">閉じる</button></header><label for="category-name">名前（1〜50文字）</label><input id="category-name" required maxlength="50"><label for="category-color">色</label><input id="category-color" type="color" value="#276858"><p id="category-error" class="error" role="alert" hidden></p><button id="save-category" class="primary" type="submit">追加する</button></form></dialog>
       <section id="notes" class="notes-panel" hidden aria-label="メモ一覧">
  <div class="notes-top"><label class="household-label">共有グループ<select id="notes-home" aria-label="メモの共有グループ"></select></label><span id="notes-sync" class="notes-sync" role="status"></span><button id="notes-refresh" class="quiet" type="button">再取得</button></div>
- <div class="notes-tools"><label>検索<input id="notes-search" type="search" placeholder="タイトル・本文" aria-label="メモを検索"></label><label>カテゴリ<select id="notes-filter"><option value="">すべて</option></select></label><label class="check-label"><input id="notes-trash" type="checkbox">ゴミ箱</label><button id="notes-category" class="quiet" type="button">カテゴリ追加</button><button id="notes-new" class="primary compact" type="button">＋ メモを作成</button></div>
+ <div class="notes-tools"><label>検索<input id="notes-search" type="search" placeholder="タイトル・本文" aria-label="メモを検索"></label><label>カテゴリ<select id="notes-filter"><option value="">すべて</option></select></label><label class="check-label"><input id="notes-trash" type="checkbox">ゴミ箱</label><button id="notes-category" class="quiet" type="button">カテゴリ追加</button><button id="notes-new" class="primary compact" type="button">＋ メモ</button></div>
  <p id="notes-error" class="error notes-message" role="alert" hidden></p><p id="notes-notice" class="notes-message muted" role="status"></p><div id="notes-cards" class="note-cards"></div>
 </section>
       <section id="checklists" class="notes-panel" hidden aria-label="リスト一覧">
  <div class="notes-top"><label class="household-label">共有グループ<select id="checklists-home" aria-label="リストの共有グループ"></select></label><span id="checklists-sync" class="notes-sync" role="status"></span><button id="checklists-refresh" class="quiet" type="button">再取得</button></div>
- <div class="notes-tools"><label>検索<input id="checklists-search" type="search" placeholder="タイトル・本文・項目" aria-label="リストを検索"></label><label>カテゴリ<select id="checklists-filter"><option value="">すべて</option></select></label><label class="check-label"><input id="checklists-trash" type="checkbox">ゴミ箱</label><button id="checklists-category" class="quiet" type="button">カテゴリ追加</button><button id="checklists-new" class="primary compact" type="button">＋ リストを作成</button></div>
+ <div class="notes-tools"><label>検索<input id="checklists-search" type="search" placeholder="タイトル・本文・項目" aria-label="リストを検索"></label><label>カテゴリ<select id="checklists-filter"><option value="">すべて</option></select></label><label class="check-label"><input id="checklists-trash" type="checkbox">ゴミ箱</label><button id="checklists-category" class="quiet" type="button">カテゴリ追加</button><button id="checklists-new" class="primary compact" type="button">＋ リスト</button></div>
  <p id="checklists-error" class="error notes-message" role="alert" hidden></p><p id="checklists-notice" class="notes-message muted" role="status"></p><div id="checklists-cards" class="note-cards"></div>
 </section>
 
@@ -98,6 +100,7 @@
 <button id="backup-import" type="button" class="primary" disabled>確認した内容で追加する</button>
 <p id="backup-status" role="status" aria-live="polite"></p><button id="backup-report" type="button" class="quiet" disabled>実行記録を保存する</button>
 </dialog>
+      <dialog id="settings-dialog" aria-labelledby="settings-title"><header class="dialog-heading"><h2 id="settings-title">設定</h2><button class="quiet" id="settings-close" type="button">閉じる</button></header><div id="settings-account"></div><div id="settings-theme"></div><div id="settings-groups"></div></dialog>
       <footer>Family <span>暮らしを、いっしょに。</span></footer>
     </main>
   </div>

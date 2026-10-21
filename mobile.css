@@ -1,0 +1,78 @@
+/* Compact viewport shell. Long content scrolls inside its own region. */
+html,body{height:100%;overflow:hidden}
+body{line-height:1.5}
+button{min-height:44px;min-width:44px;font-size:14px}
+input,select,textarea{font-size:16px!important}
+.top-tools{top:calc(env(safe-area-inset-top) + 6px);right:calc(env(safe-area-inset-right) + 10px)}
+.top-tools>button{padding:6px 12px}
+.connection{position:fixed;top:calc(env(safe-area-inset-top) + 52px);left:8px;right:8px;font-size:12px;padding:8px;box-shadow:var(--shadow)}
+.app-layout{position:fixed;inset:auto 0;top:var(--app-top,0px);height:var(--app-height,100dvh);min-height:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+.sidebar{position:static;height:52px;flex:none;display:block;padding:6px 12px;border:0;background:var(--surface)}
+.sidebar .brand{font-size:20px;gap:8px;width:max-content;line-height:40px}
+.sidebar .brand-icon{width:32px;height:32px;border-radius:10px;font-size:26px}
+.sidebar-caption,.page-header,.workspace>footer,.section-hint,.intro>div,.intro>small,.login-card>.eyebrow,.login-card>.muted,.privacy{display:none}
+.sidebar nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:0;background:var(--surface);border-top:1px solid var(--line);padding:4px max(8px,env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
+.sidebar nav button{display:flex;flex-direction:column;gap:0;align-items:center;justify-content:center;text-align:center;font-size:12px;padding:2px;min-height:52px;color:var(--muted)}
+.sidebar nav button span{font-size:20px;line-height:24px}
+.workspace{display:flex;flex-direction:column;flex:1;min-height:0;width:100%;max-width:1100px;padding:8px 8px calc(68px + env(safe-area-inset-bottom));margin:0 auto;overflow:hidden}
+.workspace>section{flex:1;min-height:0;display:flex;flex-direction:column;border-radius:12px}
+.workspace>.error{flex:none;max-height:70px;overflow:auto;margin:0 0 6px}
+.calendar-toolbar{padding:6px 8px;flex:none;flex-wrap:nowrap;gap:4px}
+.calendar-toolbar h2{font-size:16px;line-height:1.3;letter-spacing:0;min-width:0;overflow-wrap:anywhere}
+.calendar-controls{gap:2px;flex:none}
+.calendar-controls button{padding:4px 8px}
+.calendar-actions{padding:0 8px 6px;gap:6px;flex:none;flex-wrap:wrap}
+.calendar-actions>.primary{margin-left:auto}
+.calendar-actions>button{padding:6px 8px}
+.view-tabs{padding:0;gap:0}
+.view-tabs button{min-width:44px;padding:4px 8px}
+.calendar-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
+.calendar-scroll:has(>.calendar-grid[hidden]){display:none}
+.calendar-grid.mode-month{height:100%;min-height:288px;grid-template-rows:24px repeat(6,minmax(44px,1fr));grid-template-columns:repeat(7,minmax(0,1fr))}
+.mode-month .weekday{padding:3px 0;font-size:12px}
+.calendar-grid.mode-month .day{min-height:0;padding:0;overflow:hidden}
+.mode-month .day-head{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:0;min-height:44px;height:100%;padding:0;font-size:14px}
+.mode-month .day-head time{width:26px;height:24px;min-width:26px;padding:0}
+.day-count{color:var(--green);font-size:10px;line-height:14px}
+.mode-week .day,.mode-day .day{min-height:90px;padding:8px;grid-template-columns:1fr;gap:4px}
+.mode-week .day-head,.mode-day .day-head{grid-row:auto;min-height:44px}
+.mode-week .event-chip,.mode-day .event-chip{min-height:44px;font-size:14px;padding:8px}
+.event-results{flex:1;min-height:0;max-height:none;overflow:auto;padding:8px 12px;overscroll-behavior:contain}
+.calendar-message,.notes-message{flex:none;font-size:12px;margin:4px 8px;max-height:54px;overflow:auto}
+.notes-message:empty{display:none}
+.quick-tools{display:flex;flex:none;justify-content:space-between;gap:8px;padding:8px;border-bottom:1px solid var(--line)}
+.note-cards{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:8px;gap:8px}
+.note-card{flex:none;min-height:88px;padding:12px;gap:4px;border-radius:10px}
+.note-card-title{font-size:16px}.note-card-content{-webkit-line-clamp:2;font-size:14px}.note-card-meta{font-size:11px}
+.note-card .note-category-dot,.note-card .note-card-meta{display:none}
+dialog,#note-dialog,#item-dialog{position:fixed;top:calc(var(--app-top,0px) + env(safe-area-inset-top) + 8px);bottom:auto;margin:0 auto;width:min(620px,calc(100% - 16px));max-height:calc(var(--app-height,100dvh) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);padding:0 14px 14px;border-radius:16px;scroll-padding-block:64px 76px;overflow:auto}
+.dialog-heading{position:sticky;top:0;z-index:3;align-items:center;background:var(--surface);padding:8px 0;margin:0 0 8px;border-bottom:1px solid var(--line)}
+.dialog-heading h2{font-size:18px;margin:0}.dialog-heading .eyebrow{display:none}
+.dialog-actions{position:sticky;bottom:-14px;z-index:2;background:var(--surface);padding:8px 0;margin-top:10px;gap:6px}
+.date-pair{gap:6px}.date-pair input{min-height:44px}
+#event-form>label,#note-form>label{margin-top:8px}label{margin-bottom:4px}
+#event-description{min-height:72px;height:72px}#note-content{min-height:100px;height:140px;line-height:1.6}
+.event-metadata{margin:8px 0;max-height:50px;overflow:auto}
+.note-options{margin:8px 0;gap:12px}.field-hint{margin-bottom:6px}
+.note-extra summary{cursor:pointer;min-height:44px;display:list-item;padding:12px 0;font-size:13px;color:var(--green)}
+.note-checklist{margin-top:12px}.note-checklist h3{margin:4px 0}
+.checklist-row{grid-template-columns:44px minmax(0,1fr);padding:6px 0;gap:2px 6px}.item-buttons{grid-column:2;justify-content:flex-end}.item-stamp{grid-column:2}.item-buttons button{min-width:44px;padding:4px 8px}
+.calendar-filters,.notes-tools{display:grid;padding:8px 0;gap:10px;border:0;background:transparent}
+.calendar-filters label:first-child,.notes-tools>label:first-child{min-width:0}
+.calendar-filters select,.notes-tools select{max-width:100%;width:100%}
+.calendar-filters input[type=search],.notes-tools input[type=search]{margin-top:4px}
+#settings-dialog .account{margin:0 0 12px;border:0;padding:0;display:flex;gap:8px}
+#settings-dialog .account>div{flex-basis:100%}#settings-dialog .account button{width:auto;font-size:14px;min-height:44px;margin:0}#settings-dialog .avatar,#settings-dialog .account strong{display:none}
+#settings-dialog .account p{font-size:13px;margin:0;overflow-wrap:anywhere}
+.settings-group h3{font-size:15px;margin:16px 0 8px}
+.settings-group .calendar-topline,.settings-group .notes-top{display:grid;gap:10px;padding:0;border:0}
+.settings-group .household-label{display:grid;font-size:13px;gap:4px}.settings-group select{width:100%;max-width:100%;min-width:0}
+.settings-group #sync-status,.settings-group .notes-sync{margin:0;font-size:12px;min-width:0}
+.settings-group>button{margin-top:8px;width:100%}
+.login-layout{position:fixed;inset:auto 0;top:var(--app-top,0px);height:var(--app-height,100dvh);min-height:0;display:block;padding:calc(env(safe-area-inset-top) + 12px) 16px 16px;overflow:auto;max-width:420px}
+.intro{min-height:0;display:block;margin:0 0 12px}.intro .brand{font-size:22px}
+.login-card{padding:16px;border-radius:16px}.login-card h2{font-size:20px;margin:0 0 12px}.password-label{margin-top:8px}.login-card .primary{margin-top:14px}
+.loading{min-height:100dvh}
+@media(min-width:700px){.workspace{padding-left:18px;padding-right:18px}.note-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}.note-card{min-height:110px}}
+@media(max-width:360px){.workspace{padding-left:4px;padding-right:4px}.calendar-actions{gap:4px;padding-left:4px;padding-right:4px}.calendar-actions>button{padding-left:7px;padding-right:7px}}
+@media(max-height:520px){.calendar-grid.mode-month{min-height:288px}.workspace{padding-top:4px}.sidebar{height:48px}.sidebar nav button{min-height:44px}.workspace{padding-bottom:calc(60px + env(safe-area-inset-bottom))}}
