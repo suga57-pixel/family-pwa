@@ -35,8 +35,8 @@
       $('household-select').disabled = this.writing || !this.homes.length;
       $('close-event').disabled = this.writing;
       $('close-category').disabled = this.writing;
-      for (const id of ['event-title','event-description','event-all-day','event-start-date','event-end-date','event-category']) $(id).disabled = this.writing || !!this.base?.deleted_at;
-      for (const id of ['event-start-time','event-end-time']) $(id).disabled = this.writing || !!this.base?.deleted_at || $('event-all-day').checked;
+      for (const id of ['event-title','event-description','event-all-day','event-start-date','event-category']) $(id).disabled = this.writing || !!this.base?.deleted_at;
+      for (const id of ['event-start-time']) $(id).disabled = this.writing || !!this.base?.deleted_at || $('event-all-day').checked;
       $('category-name').disabled = this.writing; $('category-color').disabled = this.writing;
     }
     setSession(client, session) {
@@ -236,16 +236,14 @@
       $('event-all-day').checked = event ? !!event.all_day : true;
       $('event-schedule').hidden = true; $('event-options').open = false;
       $('event-start-date').value = event ? C.day(event.starts_at) : key;
-      $('event-end-date').value = event ? C.displayEnd(event) : key;
       $('event-start-time').value = event ? C.time(event.starts_at) : '09:00';
-      $('event-end-time').value = event ? C.time(event.ends_at) : '10:00';
       if (event?.category_id && !this.categories.some(c => c.id === event.category_id)) $('event-category').add(new Option('取得できないカテゴリ（選び直してください）',event.category_id));
       $('event-category').value = event?.category_id || '';
       $('event-metadata').textContent = event ? `作成：${this.person(event.created_by)}\n${stamp(event.created_at)}\n更新：${this.person(event.updated_by)}\n${stamp(event.updated_at)} · version ${event.version}${event.deleted_at ? `\n削除：${stamp(event.deleted_at)}` : ''}` : '保存すると作成者・更新者が記録されます。';
       $('delete-event').hidden = !event || !!event.deleted_at;
       $('restore-event').hidden = !event?.deleted_at;
       $('save-event').hidden = !!event?.deleted_at;
-      for (const id of ['event-title','event-description','event-all-day','event-start-date','event-end-date','event-category']) $(id).disabled = !!event?.deleted_at;
+      for (const id of ['event-title','event-description','event-all-day','event-start-date','event-category']) $(id).disabled = !!event?.deleted_at;
       this.toggleAllDay(); message('event-error'); $('conflict-panel').hidden = true; $('remote-change').hidden = true;
       this.controls();
       if (!$('event-dialog').open) $('event-dialog').showModal();
@@ -253,8 +251,8 @@
     }
     toggleAllDay() {
       const all = $('event-all-day').checked, deleted = !!this.base?.deleted_at;
-      for (const id of ['event-start-time','event-end-time']) { $(id).disabled = all || deleted; $(id).required = !all; }
-      $('event-time-toggle').textContent = all ? '時刻指定なし' : `${$('event-start-date').value.slice(5).replace('-', '/')} ${$('event-start-time').value} 〜 ${$('event-end-date').value.slice(5).replace('-', '/')} ${$('event-end-time').value}`;
+      for (const id of ['event-start-time']) { $(id).disabled = all || deleted; $(id).required = !all; }
+      $('event-time-toggle').textContent = all ? '時刻指定なし' : `${$('event-start-date').value.slice(5).replace('-', '/')} ${$('event-start-time').value}`;
       $('event-time-toggle').setAttribute('aria-expanded', String(!$('event-schedule').hidden));
     }
     closeEvent() {
@@ -262,10 +260,24 @@
       $('event-dialog').close(); this.base = null; this.latest = null; this.dirty = false;
     }
     readForm() {
-      return C.payload({ title:$('event-title').value, description:$('event-description').value,
-        startDate:$('event-start-date').value, endDate:$('event-end-date').value,
-        startTime:$('event-start-time').value, endTime:$('event-end-time').value,
-        allDay:$('event-all-day').checked, category:$('event-category').value }, this.household);
+      const startDate = $('event-start-date').value, startTime = $('event-start-time').value;
+      const allDay = $('event-all-day').checked;
+      // New timed events record a start instant; untimed events cover one day.
+      const fields = C.payload({ title:$('event-title').value, description:$('event-description').value,
+        startDate, endDate:startDate, startTime, endTime:startTime,
+        allDay, category:$('event-category').value }, this.household);
+      // Preserve existing ranges when the time mode is unchanged. Moving the start
+      // moves the whole range; text edits retain exact original timestamps.
+      if (this.base && this.base.all_day === allDay) {
+        const unchanged = startDate === C.day(this.base.starts_at) && (allDay || startTime === C.time(this.base.starts_at));
+        if (unchanged) {
+          fields.starts_at = this.base.starts_at; fields.ends_at = this.base.ends_at;
+        } else {
+          const duration = Math.max(0, Date.parse(this.base.ends_at) - Date.parse(this.base.starts_at));
+          fields.ends_at = new Date(Date.parse(fields.starts_at) + duration).toISOString();
+        }
+      }
+      return fields;
     }
     async save(action) {
       if (!this.ready || this.writing || this.conflicted || !navigator.onLine) return;
@@ -323,7 +335,7 @@
         if (opening && $('event-all-day').checked && !this.base?.deleted_at) { $('event-all-day').checked = false; this.dirty = true; }
         this.toggleAllDay();
       });
-      for (const id of ['event-start-date','event-end-date','event-start-time','event-end-time','event-all-day']) $(id).addEventListener('change', () => this.toggleAllDay());
+      for (const id of ['event-start-date','event-start-time','event-all-day']) $(id).addEventListener('change', () => this.toggleAllDay());
       $('event-form').addEventListener('submit', e => { e.preventDefault(); this.save('save'); });
       $('delete-event').addEventListener('click', () => this.save('delete'));
       $('restore-event').addEventListener('click', () => this.save('restore'));

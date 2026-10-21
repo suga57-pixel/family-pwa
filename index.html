@@ -59,8 +59,8 @@
           <button id="event-time-toggle" class="quiet schedule-toggle" type="button" aria-expanded="false" aria-controls="event-schedule">時刻指定なし</button>
           <section id="event-schedule" hidden aria-label="日時設定">
           <label class="check-label"><input id="event-all-day" type="checkbox">時刻を指定しない</label>
-          <p class="field-hint">日本時間（JST）で入力。終日の終了日は、その日を含みます。</p>
-          <div class="date-pair"><div><label for="event-start-date">開始日</label><input id="event-start-date" type="date" required min="1900-01-01" max="9998-12-31"></div><div><label for="event-start-time">開始時刻</label><input id="event-start-time" type="time" required></div><div><label for="event-end-date">終了日</label><input id="event-end-date" type="date" required min="1900-01-01" max="9998-12-31"></div><div><label for="event-end-time">終了時刻</label><input id="event-end-time" type="time" required></div></div>
+          <p class="field-hint">日本時間で入力します。</p>
+          <div class="date-pair"><div><label for="event-start-date">日付</label><input id="event-start-date" type="date" required min="1900-01-01" max="9998-12-31"></div><div><label for="event-start-time">時刻</label><input id="event-start-time" type="time" required></div></div>
           </section>
           <label for="event-title">タイトル</label><input id="event-title" required maxlength="200" autocomplete="off">
           <label for="event-description">詳細</label><textarea id="event-description" rows="4"></textarea>
