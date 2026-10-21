@@ -20,11 +20,13 @@
       this.anchor = C.day(new Date()); this.mode = 'month'; this.ready = false; this.writing = false;
       this.channel = null; this.base = null; this.dirty = false; this.latest = null; this.conflicted = false;
       this.bind(); this.render();
-      this.poll = setInterval(() => { if (this.user && !document.hidden && navigator.onLine) this.schedule(); }, 60000);
-      window.addEventListener('online', () => this.schedule());
+      window.addEventListener('beforeunload', event => { if(this.dirty || this.writing){event.preventDefault();event.returnValue='';} });
+      this.poll = setInterval(() => { if (this.user && !document.hidden && navigator.onLine && window.FamilySync?.backgroundAllowed !== false) this.schedule(); }, 60000);
+      window.addEventListener('online', () => { if(window.FamilySync?.backgroundAllowed !== false) this.schedule(); });
       window.addEventListener('offline', () => { this.ready = false; this.sync('オフライン · 保存できません'); this.controls(); });
-      document.addEventListener('visibilitychange', () => { if (!document.hidden) { this.render(); this.schedule(); } });
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) { this.render(); if(window.FamilySync?.backgroundAllowed !== false) this.schedule(); } });
     }
+    canLeave() { return !this.writing && (!this.dirty || window.confirm('未保存の予定があります。入力を破棄して続けますか？')); }
     sync(text) { $('sync-status').textContent = text; }
     controls() {
       const disabled = !this.ready || this.writing || !navigator.onLine;
@@ -118,9 +120,10 @@
     }
     subscribe() {
       this.stopChannel();
+      if(window.FamilySync?.mode === 'poll') return;
       const epoch = this.epoch, household = this.household;
       const current = () => this.epoch === epoch && this.household === household;
-      const changed = () => { if (current()) this.schedule(); };
+      const changed = () => { if (current()) { window.FamilySync?.received('events/categories'); this.schedule(); } };
       const channel = this.store.client.channel(`family-calendar-${household}-${epoch}`);
       this.channel = channel;
       for (const table of ['events', 'categories']) {

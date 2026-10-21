@@ -1,7 +1,7 @@
 // アプリ本体だけを保存。API、セッション、個人データはキャッシュしない。
 const CACHE_PREFIX = 'family-shell-';
-const CACHE = `${CACHE_PREFIX}stage3-v1`;
-const SHELL = ['./', './index.html', './styles.css', './app.js', './calendar.css', './calendar-core.js', './calendar-store.js', './calendar.js', './notes.css', './notes-store.js', './notes.js', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './vendor/supabase.js'];
+const CACHE = `${CACHE_PREFIX}stage4-v1`;
+const SHELL = ['./backup-core.js', './backup.js', './stage4.css', './sync-diagnostics.js', './', './index.html', './styles.css', './app.js', './calendar.css', './calendar-core.js', './calendar-store.js', './calendar.js', './notes.css', './notes-store.js', './notes.js', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './vendor/supabase.js'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)));
 });

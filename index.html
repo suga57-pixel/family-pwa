@@ -16,12 +16,16 @@
   <script src="./config.js" defer></script>
   <script src="./vendor/supabase.js" defer></script>
   <link rel="stylesheet" href="./calendar.css">
+  <script src="./sync-diagnostics.js" defer></script>
   <script src="./calendar-core.js" defer></script>
   <script src="./calendar-store.js" defer></script>
   <script src="./calendar.js" defer></script>
   <link rel="stylesheet" href="./notes.css">
   <script src="./notes-store.js" defer></script>
   <script src="./notes.js" defer></script>
+  <link rel="stylesheet" href="./stage4.css">
+  <script src="./backup-core.js" defer></script>
+  <script src="./backup.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
@@ -33,8 +37,8 @@
     <section class="login-card"><span class="eyebrow">WELCOME HOME</span><h2>おかえりなさい</h2><p class="muted">いつものアカウントでログインしてください。</p><form id="login-form"><label for="email">メールアドレス</label><input id="email" name="email" type="email" autocomplete="username" inputmode="email" placeholder="you@example.com" required><div class="password-label"><label for="password">パスワード</label><button id="show-password" class="text-button" type="button" aria-pressed="false">表示する</button></div><input id="password" name="password" type="password" autocomplete="current-password" required><p id="login-error" class="error" role="alert" hidden></p><button id="submit" class="primary" type="submit">ログイン <span>→</span></button></form><p class="privacy">ふたりだけの、プライベートな空間。<br>登録済みのアカウントでご利用いただけます。</p></section>
   </main>
   <div id="app" class="app-layout" hidden>
-    <aside class="sidebar"><a class="brand" href="./"><span class="brand-icon">f.</span>Family</a><p class="sidebar-caption">ふたりの暮らし</p><nav aria-label="メインナビゲーション"><button data-view="calendar" aria-current="page"><span>▦</span>カレンダー</button><button data-view="notes"><span>▤</span>メモ帳</button><button data-view="checklists"><span>☑</span>チェックリスト</button></nav><div class="account"><span class="avatar">F</span><div><strong>マイアカウント</strong><p id="account-email"></p></div><button id="logout" class="quiet" type="button">ログアウト</button></div></aside>
-    <main class="workspace"><header class="page-header"><div><span class="eyebrow">YOUR SHARED SPACE</span><h1 id="page-title">カレンダー</h1><p id="page-subtitle" class="muted">ふたりの予定を、ひと目で。</p></div><span class="phase">第3段階 · メモとリスト</span></header><p id="app-error" class="error" role="alert" hidden></p>
+    <aside class="sidebar"><a class="brand" href="./"><span class="brand-icon">f.</span>Family</a><p class="sidebar-caption">ふたりの暮らし</p><nav aria-label="メインナビゲーション"><button data-view="calendar" aria-current="page"><span>▦</span>カレンダー</button><button data-view="notes"><span>▤</span>メモ帳</button><button data-view="checklists"><span>☑</span>チェックリスト</button></nav><div class="account"><span class="avatar">F</span><div><strong>マイアカウント</strong><p id="account-email"></p></div><button id="backup-open" class="quiet" type="button">バックアップ</button><button id="logout" class="quiet" type="button">ログアウト</button></div></aside>
+    <main class="workspace"><header class="page-header"><div><span class="eyebrow">YOUR SHARED SPACE</span><h1 id="page-title">カレンダー</h1><p id="page-subtitle" class="muted">ふたりの予定を、ひと目で。</p></div><span class="phase">第4段階 · バックアップ</span></header><p id="app-error" class="error" role="alert" hidden></p>
       <section id="calendar" aria-label="カレンダー">
         <div class="calendar-topline"><label class="household-label">共有グループ<select id="household-select" aria-label="共有グループ" disabled></select></label><span id="sync-status" role="status" aria-live="polite">接続を確認しています…</span><button id="refresh-calendar" class="quiet" type="button">再取得</button></div>
         <div class="calendar-toolbar"><h2 id="month-label"></h2><div class="calendar-controls"><button id="today" class="quiet" type="button">今日</button><button id="previous-month" class="quiet" type="button" aria-label="前の期間">‹</button><button id="next-month" class="quiet" type="button" aria-label="次の期間">›</button></div></div>
@@ -82,6 +86,18 @@
 </dialog>
 <dialog id="item-dialog" aria-labelledby="item-heading"><form id="item-form"><header class="dialog-heading"><h2 id="item-heading">項目を編集</h2><button id="item-close" class="quiet" type="button">閉じる</button></header><label for="item-content">内容</label><textarea id="item-content" rows="5" required></textarea><p id="item-metadata" class="event-metadata"></p><p id="item-error" class="error" role="alert" hidden></p><section id="item-conflict" class="conflict-panel" hidden><p>入力をコピーしてから最新の項目を開き直してください。</p><pre id="item-latest"></pre><button id="item-load-latest" class="quiet" type="button">最新の項目を開く</button></section><button id="item-save" class="primary" type="submit">保存する</button></form></dialog>
 <dialog id="note-category-dialog" aria-labelledby="note-category-heading"><form id="note-category-form"><header class="dialog-heading"><h2 id="note-category-heading">メモ・リストのカテゴリ</h2><button id="note-category-close" class="quiet" type="button">閉じる</button></header><label for="note-category-name">名前（1〜50文字）</label><input id="note-category-name" required maxlength="50"><label for="note-category-color">色</label><input id="note-category-color" type="color" value="#276858"><p id="note-category-error" class="error" role="alert" hidden></p><button id="note-category-save" class="primary" type="submit">追加する</button></form></dialog>
+      <dialog id="backup-dialog" aria-labelledby="backup-heading"><header class="dialog-heading"><h2 id="backup-heading">バックアップと復元</h2><button id="backup-close" type="button" class="quiet">閉じる</button></header>
+<p>ふたりとも編集を止めて操作してください。JSONには私的な内容が含まれます。安全な場所に保管してください。</p>
+<label for="backup-home">対象の共有グループ</label><select id="backup-home"></select>
+<button id="backup-export" type="button" class="primary">JSONを書き出す</button>
+<hr><label for="backup-file">復元するJSON（10MB・10,000行まで）</label><input id="backup-file" type="file" accept=".json,application/json">
+<p>新規追加方式です。一致する行は再利用し、既存データとの差異があれば停止します。上書き・全件削除の方式はありません。途中停止した場合、一部だけ追加されることがあります。自動取り消しは行いません。</p>
+<pre id="backup-preview" aria-live="polite"></pre>
+<button id="backup-plan" type="button" class="quiet" disabled>追加計画を保存する</button>
+<label class="check-label"><input id="backup-confirm" type="checkbox">追加先・件数・方式を確認し、現在のバックアップと追加計画を別途保管しました</label>
+<button id="backup-import" type="button" class="primary" disabled>確認した内容で追加する</button>
+<p id="backup-status" role="status" aria-live="polite"></p><button id="backup-report" type="button" class="quiet" disabled>実行記録を保存する</button>
+</dialog>
       <footer>Family <span>暮らしを、いっしょに。</span></footer>
     </main>
   </div>

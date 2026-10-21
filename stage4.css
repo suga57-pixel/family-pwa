@@ -1,0 +1,13 @@
+/* Safariの可変表示領域とセーフエリア。実機確認はTEST-GUIDE-STAGE4.md参照。 */
+dialog { max-height: calc(100dvh - 2rem); overflow-y:auto; overscroll-behavior:contain; }
+input,textarea,select { font-size:max(16px,1rem); }
+textarea { overflow-wrap:anywhere; }
+#backup-dialog { width:min(680px,calc(100% - 2rem)); }
+#backup-dialog pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:40dvh; overflow:auto; }
+#backup-dialog button { margin-block:.5rem; }
+.account { flex-wrap:wrap; }
+@media(max-width:650px) {
+  dialog { max-height:calc(100dvh - 1rem); padding-bottom:max(1rem,env(safe-area-inset-bottom)); }
+  .workspace { padding-bottom:max(1rem,env(safe-area-inset-bottom)); }
+  .dialog-actions { flex-wrap:wrap; }
+}

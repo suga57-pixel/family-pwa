@@ -11,6 +11,7 @@
   let busy = false;
   const calendar = new window.FamilyCalendar();
   const notes = new window.FamilyNotes();
+  const backup = new window.FamilyBackupUI(calendar, notes);
   const storage = {
     get(key) { try { return localStorage.getItem(key); } catch { return null; } },
     set(key, value) { try { localStorage.setItem(key, value); } catch { /* 配色保存不可でも操作継続 */ } }
@@ -37,6 +38,7 @@
     session = next;
     calendar.setSession(client, next);
     notes.setSession(client, next);
+    backup.setSession(client, next);
     $('loading').hidden = true;
     $('login').hidden = !!session;
     $('app').hidden = !session;
@@ -109,7 +111,7 @@
   });
   $('logout').addEventListener('click', async () => {
     if (!client || busy) return;
-    if (!notes.canLeave()) return;
+    if (!backup.canLeave() || !calendar.canLeave() || !notes.canLeave()) return;
     busy = true;
     $('logout').disabled = true;
     message('app-error');

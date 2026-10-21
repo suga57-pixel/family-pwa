@@ -14,10 +14,10 @@
       this.base=null; this.dirty=false; this.revision=0; this.conflicted=false; this.paused=false;
       this.itemBase=null; this.itemDirty=false; this.itemConflicted=false; this.channel=null;
       this.bind(); this.render(); this.controls();
-      setInterval(()=>{if(this.user&&!document.hidden&&navigator.onLine)this.schedule();},60000);
-      window.addEventListener('online',()=>this.schedule(0));
+      setInterval(()=>{if(this.user&&!document.hidden&&navigator.onLine&&window.FamilySync?.backgroundAllowed!==false)this.schedule();},60000);
+      window.addEventListener('online',()=>{if(window.FamilySync?.backgroundAllowed!==false)this.schedule(0);});
       window.addEventListener('offline',()=>{this.ready=false;clearTimeout(this.autoTimer);this.sync('オフライン · 保存できません');this.controls();});
-      document.addEventListener('visibilitychange',()=>{if(!document.hidden)this.schedule(0);});
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden&&window.FamilySync?.backgroundAllowed!==false)this.schedule(0);});
       window.addEventListener('beforeunload',event=>{if(this.hasUnsaved()){event.preventDefault();event.returnValue='';}});
     }
     hasUnsaved() { return this.writing || this.dirty || this.itemDirty || !!$('item-add-content').value.trim(); }
@@ -55,9 +55,10 @@
       if(old&&this.store)this.store.client.removeChannel(old).catch(()=>{});
     }
     subscribe() {
+      if(window.FamilySync?.mode==='poll')return;
       this.stopChannel();const epoch=this.epoch,house=this.household;
       const valid=()=>this.epoch===epoch&&this.household===house;
-      const changed=()=>{if(valid())this.schedule();};
+      const changed=()=>{if(valid()){window.FamilySync?.received('notes/categories/checklist_items');this.schedule();}};
       const channel=this.store.client.channel(`family-notes-${house}-${epoch}`);this.channel=channel;
       for(const table of ['notes','checklist_items','categories']){
         channel.on('postgres_changes',{event:'*',schema:'public',table,filter:`household_id=eq.${house}`},changed);
