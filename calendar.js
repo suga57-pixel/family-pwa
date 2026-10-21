@@ -30,7 +30,7 @@
     sync(text) { $('sync-status').textContent = text; }
     controls() {
       const disabled = !this.ready || this.writing || !navigator.onLine;
-      for (const id of ['new-event', 'open-category', 'save-event', 'delete-event', 'restore-event', 'save-category']) $(id).disabled = disabled;
+      for (const id of ['new-event', 'open-category', 'save-event', 'delete-event', 'restore-event', 'save-category','event-time-toggle']) $(id).disabled = disabled;
       if (this.conflicted) { $('save-event').disabled = true; $('delete-event').disabled = true; $('restore-event').disabled = true; }
       $('household-select').disabled = this.writing || !this.homes.length;
       $('close-event').disabled = this.writing;
@@ -156,17 +156,20 @@
     }
     eventButton(event, key) {
       const button = el('button', undefined, 'event-chip'); button.type = 'button';
+      const author = window.FamilyUI.mark(button, event.created_by, this.members, this.user);
       const category = this.categories.find(c => c.id === event.category_id);
       const color = category && /^#[\da-f]{6}$/i.test(category.color) ? category.color : '#64748b';
       const dot = el('span', '●', 'event-dot'); dot.style.color = color; dot.setAttribute('aria-hidden', 'true');
       let clock = event.all_day ? '終日' : C.time(event.starts_at);
       if (key && C.day(event.starts_at) < key) clock = event.all_day ? '終日' : '継続';
-      button.append(dot, el('span', `${clock} ${event.title}`, 'event-chip-text'));
-      button.title = `${event.title} · ${category?.name || '未分類'} · ${stamp(event.starts_at)} 〜 ${stamp(event.ends_at)}`;
+      button.append(dot, el('span', `${event.all_day ? '' : clock + ' '}${event.title}`, 'event-chip-text'));
+      button.title = `${author.label} · ${event.title} · ${category?.name || '未分類'} · ${stamp(event.starts_at)} 〜 ${stamp(event.ends_at)}`;
       button.addEventListener('click', () => this.openEvent(event));
       return button;
     }
     render() {
+      window.FamilyUI.legend($('calendar-owner-legend'), this.members, this.user);
+      $('holiday-coverage').textContent = window.FamilyUI.holidayYears.includes(Number(this.anchor.slice(0,4))) ? '祝日：2026–2027年収録' : 'この年の祝日は未収録です';
       const key = this.anchor, {start, count} = C.range(key, this.mode), today = C.day(new Date());
       $('month-label').textContent = this.mode === 'month' ? `${Number(key.slice(0,4))}年 ${Number(key.slice(5,7))}月` : this.mode === 'week' ? `${dateLabel(start)} 〜 ${Number(C.addDays(start,6).slice(5,7))}/${Number(C.addDays(start,6).slice(8))}` : dateLabel(key);
       document.querySelectorAll('[data-calendar-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.calendarMode === this.mode)));
@@ -187,17 +190,25 @@
       grid.className = `calendar-grid mode-${this.mode}`;
       if (this.mode === 'month') for (const [i, name] of ['日','月','火','水','木','金','土'].entries()) grid.append(el('div', name, `weekday ${i === 0 ? 'sunday' : i === 6 ? 'saturday' : ''}`));
       for (let i = 0; i < count; i++) {
-        const date = C.addDays(start, i), wd = C.weekday(date);
-        const cell = el('div', undefined, `day${date.slice(0,7) !== key.slice(0,7) && this.mode === 'month' ? ' outside' : ''}${date === today ? ' today' : ''}${wd === 0 ? ' sunday' : wd === 6 ? ' saturday' : ''}`);
+        const date = C.addDays(start, i), wd = C.weekday(date), holiday = window.FamilyUI.holiday(date);
+        const cell = el('div', undefined, `day${date.slice(0,7) !== key.slice(0,7) && this.mode === 'month' ? ' outside' : ''}${date === today ? ' today' : ''}${holiday ? ' holiday' : ''}${wd === 0 ? ' sunday' : wd === 6 ? ' saturday' : ''}`);
         const head = el('button', undefined, 'day-head'); head.type = 'button'; head.disabled = !this.ready || this.writing;
         const time = el('time', this.mode === 'month' ? Number(date.slice(8)).toString() : `${Number(date.slice(5,7))}/${Number(date.slice(8))}（${['日','月','火','水','木','金','土'][wd]}）`);
-        time.dateTime = date; if (date === today) time.setAttribute('aria-current','date');
+        time.dateTime = date; if (holiday) { head.title = holiday; time.title = holiday; } if (date === today) time.setAttribute('aria-current','date');
         head.setAttribute('aria-label', this.mode === 'month' ? `${dateLabel(date)}の予定を見る` : `${dateLabel(date)}に予定を作成`); head.append(time);
         head.addEventListener('click', () => { if (this.mode === 'month') { this.mode = 'day'; this.anchor = date; this.render(); } else this.openEvent(null, date); }); cell.append(head);
         const matches = events.filter(e => C.overlaps(e, date));
         if (this.mode === 'month') {
-          if (matches.length) head.append(el('span', `${matches.length}件`, 'day-count'));
-          head.setAttribute('aria-label', `${dateLabel(date)}、予定${matches.length}件。日表示を開く`);
+          if (matches.length) {
+            matches.slice(0,3).forEach((event, index) => {
+              const label = el('span', event.title, 'month-event-title'); label.setAttribute('data-title-index',String(index));
+              const author = window.FamilyUI.mark(label, event.created_by, this.members, this.user);
+              label.title = `${author.label}：${event.title}`; head.append(label);
+            });
+            if (matches.length > 1) head.append(el('span', `＋${matches.length - 1}`, 'month-more more-short'));
+            if (matches.length > 3) head.append(el('span', `＋${matches.length - 3}`, 'month-more more-tall'));
+          }
+          head.setAttribute('aria-label', `${dateLabel(date)}${holiday ? '、'+holiday : ''}、${matches.map(e=>e.title).join('、') || '予定なし'}。日表示を開く`);
           grid.append(cell); continue;
         }
         const maximum = Infinity;
@@ -219,10 +230,11 @@
       this.base = event ? { ...event } : null; this.draftId = event?.id || crypto.randomUUID();
       this.latest = null; this.conflicted = false; this.dirty = false;
       $('event-form').reset(); this.fillCategories();
-      $('event-dialog-title').textContent = event ? event.deleted_at ? 'ゴミ箱の予定' : '予定の詳細・編集' : '予定を作成';
+      $('event-dialog-title').textContent = `${Number((event ? C.day(event.starts_at) : key).slice(5,7))}/${Number((event ? C.day(event.starts_at) : key).slice(8))} ${event ? event.deleted_at ? 'ゴミ箱の予定' : '予定の編集' : '予定を作成'}`;
       $('event-title').value = event?.title || '';
       $('event-description').value = event?.description || '';
-      $('event-all-day').checked = !!event?.all_day;
+      $('event-all-day').checked = event ? !!event.all_day : true;
+      $('event-schedule').hidden = true; $('event-options').open = false;
       $('event-start-date').value = event ? C.day(event.starts_at) : key;
       $('event-end-date').value = event ? C.displayEnd(event) : key;
       $('event-start-time').value = event ? C.time(event.starts_at) : '09:00';
@@ -242,6 +254,8 @@
     toggleAllDay() {
       const all = $('event-all-day').checked, deleted = !!this.base?.deleted_at;
       for (const id of ['event-start-time','event-end-time']) { $(id).disabled = all || deleted; $(id).required = !all; }
+      $('event-time-toggle').textContent = all ? '時刻指定なし' : `${$('event-start-date').value.slice(5).replace('-', '/')} ${$('event-start-time').value} 〜 ${$('event-end-date').value.slice(5).replace('-', '/')} ${$('event-end-time').value}`;
+      $('event-time-toggle').setAttribute('aria-expanded', String(!$('event-schedule').hidden));
     }
     closeEvent() {
       if (this.writing || (this.dirty && !window.confirm('入力中の内容を破棄して閉じますか？'))) return;
@@ -304,7 +318,12 @@
       $('close-event').addEventListener('click', () => this.closeEvent());
       $('event-dialog').addEventListener('cancel', e => { e.preventDefault(); this.closeEvent(); });
       $('event-form').addEventListener('input', () => { this.dirty = true; });
-      $('event-all-day').addEventListener('change', () => this.toggleAllDay());
+      $('event-time-toggle').addEventListener('click', () => {
+        const opening = $('event-schedule').hidden; $('event-schedule').hidden = !opening;
+        if (opening && $('event-all-day').checked && !this.base?.deleted_at) { $('event-all-day').checked = false; this.dirty = true; }
+        this.toggleAllDay();
+      });
+      for (const id of ['event-start-date','event-end-date','event-start-time','event-end-time','event-all-day']) $(id).addEventListener('change', () => this.toggleAllDay());
       $('event-form').addEventListener('submit', e => { e.preventDefault(); this.save('save'); });
       $('delete-event').addEventListener('click', () => this.save('delete'));
       $('restore-event').addEventListener('click', () => this.save('restore'));

@@ -10,7 +10,7 @@
   class Notes {
     constructor() {
       this.user=null; this.store=null; this.epoch=0; this.request=0; this.household=''; this.homes=[];
-      this.notes=[]; this.items=[]; this.categories=[]; this.ready=false; this.writing=false;
+      this.members=[]; this.notes=[]; this.items=[]; this.categories=[]; this.ready=false; this.writing=false;
       this.base=null; this.dirty=false; this.revision=0; this.conflicted=false; this.paused=false;
       this.itemBase=null; this.itemDirty=false; this.itemConflicted=false; this.channel=null;
       this.bind(); this.render(); this.controls();
@@ -31,7 +31,7 @@
       if(user?.id===this.user?.id){this.user=user;return;}
       this.epoch++;this.request++;clearTimeout(this.timer);clearTimeout(this.autoTimer);this.stopChannel();
       this.user=user;this.store=client?new S.Store(client):null;this.household='';this.homes=[];
-      this.notes=[];this.items=[];this.categories=[];this.ready=false;this.writing=false;
+      this.members=[];this.notes=[];this.items=[];this.categories=[];this.ready=false;this.writing=false;
       this.clearEditor();
       panels.forEach(p=>{ $(p+'-search').value='';$(p+'-trash').checked=false;$(p+'-home').replaceChildren();message(p+'-error'); });
       for(const id of ['note-dialog','item-dialog','note-category-dialog'])if($(id).open)$(id).close();
@@ -84,7 +84,7 @@
         if(!this.channel)this.subscribe();
         const data=await this.store.snapshot(this.household);if(!valid())return;
         if(!data.members.some(m=>m.user_id===this.user.id))throw {code:'42501'};
-        this.notes=data.notes;this.items=data.items;this.categories=data.categories;this.ready=true;
+        this.members=data.members;this.notes=data.notes;this.items=data.items;this.categories=data.categories;this.ready=true;
         panels.forEach(p=>message(p+'-error'));
         this.sync(this.connected?'● リアルタイム接続中':'同期を接続中 · 定期取得で補完');
         this.notices(`最終取得 ${stamp(new Date())} · ${homes.find(h=>h.id===this.household).name}`);
@@ -92,7 +92,7 @@
         if(this.dirty&&!this.paused&&!this.conflicted)this.queueSave();
       }catch(error){
         if(!valid())return;
-        this.notes=[];this.items=[];this.categories=[];this.ready=false;this.stopChannel();clearTimeout(this.autoTimer);
+        this.members=[];this.notes=[];this.items=[];this.categories=[];this.ready=false;this.stopChannel();clearTimeout(this.autoTimer);
         panels.forEach(p=>message(p+'-error',errorText(error)));this.sync('取得に失敗 · 再取得してください');
         // 編集中の入力は保持するが、保存は再確認が済むまで無効にする。
         this.fillCategories();this.render();this.renderItems();this.controls();
@@ -113,11 +113,14 @@
     }
     render() {
       for(const p of panels){
+        window.FamilyUI.legend($(p+'-owner-legend'), this.members, this.user);
         const cards=$(p+'-cards');cards.replaceChildren();
         const rows=this.filtered(p);
         if(!rows.length){cards.append(el('p',this.ready?($(p+'-trash').checked?'ゴミ箱は空です。':'該当するデータはありません。＋ボタンから作成できます。'):'共有データを取得すると、ここに表示します。','notes-empty'));continue;}
         for(const n of rows){
           const card=el('button',undefined,'note-card');card.type='button';
+          window.FamilyUI.mark(card,n.created_by,this.members,this.user);
+          card.append(window.FamilyUI.badge(n.created_by,this.members,this.user));
           const cat=this.categories.find(c=>c.id===n.category_id);
           const dot=el('span','●','note-category-dot');dot.setAttribute('aria-hidden','true');
           dot.style.color=cat&&/^#[\da-f]{6}$/i.test(cat.color)?cat.color:'#64748b';card.append(dot);
@@ -327,7 +330,7 @@
         $(p+'-home').addEventListener('change',()=>{
           if(!this.canLeave()){ $(p+'-home').value=this.household;return; }
           this.epoch++;this.request++;clearTimeout(this.autoTimer);this.stopChannel();this.household=$(p+'-home').value;
-          this.notes=[];this.items=[];this.categories=[];this.ready=false;this.clearEditor();
+          this.members=[];this.notes=[];this.items=[];this.categories=[];this.ready=false;this.clearEditor();
           panels.forEach(panel=>{$(panel+'-home').value=this.household;$(panel+'-filter').value='';$(panel+'-search').value='';$(panel+'-trash').checked=false;});
           this.render();this.controls();this.schedule(0);
         });
