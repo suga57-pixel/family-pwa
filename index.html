@@ -10,8 +10,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Family — ふたりの暮らし</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="icon" href="./icons/shiba.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icons/shiba.png">
   <link rel="stylesheet" href="./styles.css">
   <script src="./config.js" defer></script>
   <script src="./vendor/supabase.js" defer></script>
@@ -35,11 +35,11 @@
   <div class="top-tools"><button id="settings-open" class="quiet" type="button">設定</button><button id="theme" class="quiet" type="button" aria-label="配色を切り替え">配色：自動</button></div>
   <main id="loading" class="loading" role="status">Familyを開いています…</main>
   <main id="login" class="login-layout" hidden>
-    <section class="intro"><a class="brand" href="./"><span class="brand-icon">f.</span>Family</a><div><span class="eyebrow">OUR EVERYDAY, TOGETHER</span><h1>ふたりの毎日を、<br>ひとつの場所に。</h1><p>予定も、思いつきも、買い物リストも。<br>暮らしのあれこれを、ふたりで共有。</p><div class="feature-tags"><span>▦ カレンダー</span><span>▤ メモ帳</span><span>☑ チェックリスト</span></div></div><small>小さなことから、いっしょに。</small></section>
+    <section class="intro"><a class="brand" href="./"><img class="shiba-mark" src="./icons/shiba.png" alt="黒柴" width="32" height="32">Family</a><div><span class="eyebrow">OUR EVERYDAY, TOGETHER</span><h1>ふたりの毎日を、<br>ひとつの場所に。</h1><p>予定も、思いつきも、買い物リストも。<br>暮らしのあれこれを、ふたりで共有。</p><div class="feature-tags"><span>▦ カレンダー</span><span>▤ メモ帳</span><span>☑ チェックリスト</span></div></div><small>小さなことから、いっしょに。</small></section>
     <section class="login-card"><span class="eyebrow">WELCOME HOME</span><h2>おかえりなさい</h2><p class="muted">いつものアカウントでログインしてください。</p><form id="login-form"><label for="email">メールアドレス</label><input id="email" name="email" type="email" autocomplete="username" inputmode="email" placeholder="you@example.com" required><div class="password-label"><label for="password">パスワード</label><button id="show-password" class="text-button" type="button" aria-pressed="false">表示する</button></div><input id="password" name="password" type="password" autocomplete="current-password" required><p id="login-error" class="error" role="alert" hidden></p><button id="submit" class="primary" type="submit">ログイン <span>→</span></button></form><p class="privacy">ふたりだけの、プライベートな空間。<br>登録済みのアカウントでご利用いただけます。</p></section>
   </main>
   <div id="app" class="app-layout" hidden>
-    <aside class="sidebar"><a class="brand" href="./"><span class="brand-icon">f.</span>Family</a><p class="sidebar-caption">ふたりの暮らし</p><nav aria-label="メインナビゲーション"><button data-view="calendar" aria-current="page"><span>▦</span>カレンダー</button><button data-view="notes"><span>▤</span>メモ帳</button><button data-view="checklists"><span>☑</span>チェックリスト</button></nav><div class="account"><span class="avatar">F</span><div><strong>マイアカウント</strong><p id="account-email"></p></div><button id="backup-open" class="quiet" type="button">バックアップ</button><button id="logout" class="quiet" type="button">ログアウト</button></div></aside>
+    <aside class="sidebar"><a class="brand" href="./"><img class="shiba-mark" src="./icons/shiba.png" alt="黒柴" width="32" height="32">Family</a><p class="sidebar-caption">ふたりの暮らし</p><nav aria-label="メインナビゲーション"><button data-view="calendar" aria-current="page"><span>▦</span>カレンダー</button><button data-view="notes"><span>▤</span>メモ帳</button><button data-view="checklists"><span>☑</span>チェックリスト</button></nav><div class="account"><span class="avatar">F</span><div><strong>マイアカウント</strong><p id="account-email"></p></div><button id="backup-open" class="quiet" type="button">バックアップ</button><button id="logout" class="quiet" type="button">ログアウト</button></div></aside>
     <main class="workspace"><header class="page-header"><div><span class="eyebrow">YOUR SHARED SPACE</span><h1 id="page-title">カレンダー</h1><p id="page-subtitle" class="muted">ふたりの予定を、ひと目で。</p></div><span class="phase">第4段階 · バックアップ</span></header><p id="app-error" class="error" role="alert" hidden></p>
       <section id="calendar" aria-label="カレンダー">
         <div class="calendar-topline"><label class="household-label">共有グループ<select id="household-select" aria-label="共有グループ" disabled></select></label><span id="sync-status" role="status" aria-live="polite">接続を確認しています…</span><button id="refresh-calendar" class="quiet" type="button">再取得</button></div>

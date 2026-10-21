@@ -3,18 +3,22 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const brand = document.querySelector('.sidebar .brand');
+  const icon = document.createElement('img'); icon.src = './icons/shiba.png'; icon.alt = '黒柴'; icon.className = 'shiba-mark'; icon.width = 32; icon.height = 32;
+  const brandLabel = document.createElement('span'); brandLabel.className = 'brand-fetch';
+  brand.replaceChildren(icon, brandLabel);
   const fetched = new Map();
   const renderBrand = () => {
     const view = document.querySelector('[data-view][aria-current]')?.dataset.view || 'calendar';
-    brand.textContent = `Family_最終取得${fetched.get(view) || '----'}_vol_1.0.0`;
+    brandLabel.textContent = `[最終取得:${fetched.get(view) || '----/--/-- --:--'}_vol_1.0.0]`;
   };
   for (const view of ['calendar', 'notes', 'checklists']) {
     const notice = $(`${view}-notice`);
     const update = () => {
       const isFetch = notice.textContent.startsWith('最終取得 ');
       if (isFetch) {
-        const parts = new Intl.DateTimeFormat('en-US', {timeZone:'Asia/Tokyo',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
-        fetched.set(view, parts.find(p=>p.type==='month').value + parts.find(p=>p.type==='day').value);
+        const parts = new Intl.DateTimeFormat('en-US', {timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
+        const value = type => parts.find(p=>p.type===type).value;
+        fetched.set(view, `${value('year')}/${value('month')}/${value('day')} ${value('hour')}:${value('minute')}`);
         notice.hidden = true;
       } else if (notice.textContent) notice.hidden = false;
       renderBrand();
