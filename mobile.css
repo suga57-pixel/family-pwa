@@ -8,7 +8,7 @@ input,select,textarea{font-size:16px!important}
 .connection{position:fixed;top:calc(env(safe-area-inset-top) + 52px);left:8px;right:8px;font-size:12px;padding:8px;box-shadow:var(--shadow)}
 .app-layout{position:fixed;inset:auto 0;top:var(--app-top,0px);height:var(--app-height,100dvh);min-height:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
 .sidebar{position:static;height:52px;flex:none;display:block;padding:6px 12px;border:0;background:var(--surface)}
-.sidebar .brand{font-size:20px;gap:8px;width:max-content;line-height:40px}
+.sidebar .brand{font-size:14px;letter-spacing:0;gap:0;width:max-content;max-width:calc(100% - 64px);line-height:40px;white-space:nowrap}
 .sidebar .brand-icon{width:32px;height:32px;border-radius:10px;font-size:26px}
 .sidebar-caption,.page-header,.workspace>footer,.section-hint,.intro>div,.intro>small,.login-card>.eyebrow,.login-card>.muted,.privacy{display:none}
 .sidebar nav{position:absolute;bottom:0;left:0;right:0;z-index:7;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:0;background:var(--surface);border-top:1px solid var(--line);padding:4px max(8px,env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}

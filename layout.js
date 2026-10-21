@@ -2,6 +2,27 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
+  const brand = document.querySelector('.sidebar .brand');
+  const fetched = new Map();
+  const renderBrand = () => {
+    const view = document.querySelector('[data-view][aria-current]')?.dataset.view || 'calendar';
+    brand.textContent = `Family_最終取得${fetched.get(view) || '----'}_vol_1.0.0`;
+  };
+  for (const view of ['calendar', 'notes', 'checklists']) {
+    const notice = $(`${view}-notice`);
+    const update = () => {
+      const isFetch = notice.textContent.startsWith('最終取得 ');
+      if (isFetch) {
+        const parts = new Intl.DateTimeFormat('en-US', {timeZone:'Asia/Tokyo',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+        fetched.set(view, parts.find(p=>p.type==='month').value + parts.find(p=>p.type==='day').value);
+        notice.hidden = true;
+      } else if (notice.textContent) notice.hidden = false;
+      renderBrand();
+    };
+    new MutationObserver(update).observe(notice, {childList:true,subtree:true,characterData:true});
+  }
+  new MutationObserver(renderBrand).observe(document.querySelector('.sidebar nav'), {subtree:true,attributes:true,attributeFilter:['aria-current']});
+  renderBrand();
   const settings = $('settings-dialog');
   const closeSettings = () => settings.close();
   $('settings-open').addEventListener('click', () => { navUpdate(); settings.showModal(); });
@@ -80,6 +101,6 @@
   window.visualViewport?.addEventListener('scroll', resize);
   window.addEventListener('resize', resize); resize();
   new MutationObserver(() => {
-    if ($('app').hidden) { for (const d of document.querySelectorAll('dialog[open]')) d.close(); }
+    if ($('app').hidden) { fetched.clear(); renderBrand(); for (const d of document.querySelectorAll('dialog[open]')) d.close(); }
   }).observe($('app'), {attributes:true,attributeFilter:['hidden']});
 })();
