@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const EVENT_COLUMNS = 'id,household_id,category_id,title,description,starts_at,ends_at,all_day,created_by,updated_by,created_at,updated_at,deleted_at,version';
+  const EVENT_COLUMNS = 'id,household_id,category_id,title,description,starts_at,ends_at,all_day,is_private,created_by,updated_by,created_at,updated_at,deleted_at,version';
   class Conflict extends Error { constructor(latest) { super('予定が更新されたか、アクセスできなくなりました。'); this.latest = latest; } }
   const check = result => { if (result.error) throw result.error; return result.data; };
   class Store {

@@ -38,7 +38,7 @@
       catch{if(epoch===this.epoch)this.status('所属情報を確認できません。通信とログイン状態を確認してください。');}
       finally{if(epoch===this.epoch){this.busy=false;this.controls();}}
     }
-    store(epoch,home){return new B.Store(this.client,()=>this.user&&this.epoch===epoch&&$('backup-home').value===home&&navigator.onLine);}
+    store(epoch,home){return new B.Store(this.client,()=>this.user&&this.epoch===epoch&&$('backup-home').value===home&&navigator.onLine,this.user);}
     async member(home){const homes=await new window.FamilyStore.Store(this.client).households(this.user);if(!homes.some(h=>h.id===home))throw new Error('共有グループの所属を確認できません。');}
     download(data,name){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`${name}-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}
     async export(){

@@ -3,7 +3,7 @@
   const tables = ['categories', 'events', 'notes', 'checklist_items'];
   const fields = {
     categories: ['id','name','color','type','sort_order'],
-    events: ['id','category_id','title','description','starts_at','ends_at','all_day','deleted_at'],
+    events: ['id','category_id','title','description','starts_at','ends_at','all_day','deleted_at','is_private'],
     notes: ['id','category_id','title','content','note_type','is_pinned','deleted_at'],
     checklist_items: ['id','note_id','content','is_checked','sort_order']
   };
@@ -25,7 +25,13 @@
     const v=row[k]; return /_at$/.test(k) && v ? new Date(v).toISOString() : v;
   }));
   function validate(file) {
-    if (!object(file) || Object.keys(file).some(k=>!['format','schemaVersion','exportedAt','sourceHousehold','data'].includes(k)) || file.format !== 'FamilyBackup' || file.schemaVersion !== 1 || !date(file.exportedAt) || !uuid(file.sourceHousehold) || !object(file.data)) fail('FamilyBackup v1形式を確認してください。');
+    // v1 had only shared events. Normalize a copy without changing the source file.
+    if (object(file) && file.format === 'FamilyBackup' && file.schemaVersion === 1 && Array.isArray(file.data?.events)) {
+      const legacy = fields.events.filter(k => k !== 'is_private');
+      for (const row of file.data.events) if (!object(row) || Object.keys(row).length !== legacy.length || legacy.some(k => !Object.hasOwn(row,k))) fail('v1予定の列が不正です。');
+      file = {...file, schemaVersion:2, data:{...file.data,events:file.data.events.map(r=>({...r,is_private:false}))}};
+    }
+    if (!object(file) || Object.keys(file).some(k=>!['format','schemaVersion','exportedAt','sourceHousehold','data'].includes(k)) || file.format !== 'FamilyBackup' || file.schemaVersion !== 2 || !date(file.exportedAt) || !uuid(file.sourceHousehold) || !object(file.data)) fail('FamilyBackup v1/v2形式を確認してください。');
     if (Object.keys(file.data).length!==4 || tables.some(t=>!Array.isArray(file.data[t]))) fail('4種類のデータ配列が必要です。');
     let total=0; const maps={};
     for (const t of tables) {
@@ -37,7 +43,7 @@
         if (t==='categories') {
           if (!str(r.name,100) || !r.name.trim() || [...r.name.trim()].length>50 || !/^#[0-9a-f]{6}$/i.test(r.color) || !['event','note'].includes(r.type) || !integer(r.sort_order)) fail('カテゴリが不正です。');
         } else if (t==='events') {
-          if (!str(r.title,400) || !r.title.trim() || [...r.title.trim()].length>200 || !str(r.description,100000) || !date(r.starts_at) || !date(r.ends_at) || Date.parse(r.ends_at)<Date.parse(r.starts_at) || typeof r.all_day!=='boolean') fail('予定が不正です。');
+          if (!str(r.title,400) || !r.title.trim() || [...r.title.trim()].length>200 || !str(r.description,100000) || !date(r.starts_at) || !date(r.ends_at) || Date.parse(r.ends_at)<Date.parse(r.starts_at) || typeof r.all_day!=='boolean' || typeof r.is_private!=='boolean') fail('予定が不正です。');
         } else if (t==='notes') {
           if (!str(r.title,10000) || !str(r.content,100000) || !['text','checklist'].includes(r.note_type) || typeof r.is_pinned!=='boolean') fail('メモが不正です。');
         } else if (!str(r.content,100000) || typeof r.is_checked!=='boolean' || !integer(r.sort_order) || !uuid(r.note_id)) fail('チェック項目が不正です。');
@@ -54,7 +60,7 @@
     return file;
   }
   function encode(snapshot, household) {
-    return validate({format:'FamilyBackup',schemaVersion:1,exportedAt:new Date().toISOString(),sourceHousehold:household,data:Object.fromEntries(tables.map(t=>[t,snapshot[t].map(r=>pick(t,r))]))});
+    return validate({format:'FamilyBackup',schemaVersion:2,exportedAt:new Date().toISOString(),sourceHousehold:household,data:Object.fromEntries(tables.map(t=>[t,snapshot[t].map(r=>pick(t,r))]))});
   }
   async function targetId(home, sourceHome, table, id) {
     const bytes=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(`FamilyBackup/v1/${home}/${sourceHome}/${table}/${id}`)));
@@ -63,7 +69,7 @@
     return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
   }
   async function plan(file, snapshot, home) {
-    validate(file); if(!uuid(home))fail('共有グループが不正です。');
+    file = validate(file); if(!uuid(home))fail('共有グループが不正です。');
     const maps={categories:new Map(),notes:new Map()}, rows=[], conflicts=[], skipped=[];
     for(const t of tables) for(const original of file.data[t]) {
       const row=pick(t,original); row.id=await targetId(home,file.sourceHousehold,t,original.id);
@@ -99,11 +105,12 @@
   }
   const check = result => {if(result.error)throw result.error;return result.data;};
   class Store {
-    constructor(client,guard=()=>true){this.client=client;this.guard=guard;}
+    constructor(client,guard=()=>true,user){this.client=client;this.guard=guard;this.user=user;}
     assert(){if(!this.guard())fail('ログインまたは操作状態が変わったため停止しました。');}
     async snapshot(home){
       this.assert();const data={};
-      for(const t of tables){data[t]=[];for(let offset=0;;){this.assert();const batch=check(await this.client.from(t).select(fields[t].join(',')+',household_id'+(t==='categories'?'':',version')).eq('household_id',home).order('id').range(offset,offset+499));this.assert();data[t].push(...batch);if(data[t].length>10000)fail('上限10,000行です。');if(!batch.length)break;offset+=batch.length;}}
+      for(const t of tables){data[t]=[];for(let offset=0;;){this.assert();const batch=check(await this.client.from(t).select(fields[t].join(',')+',household_id'+(t==='categories'?'':',version')+(t==='events'? ',created_by':'')).eq('household_id',home).order('id').range(offset,offset+499));this.assert();data[t].push(...batch);if(data[t].length>10000)fail('上限10,000行です。');if(!batch.length)break;offset+=batch.length;}}
+      data.events = data.events.filter(e => window.FamilyCore.visible(e,this.user));
       return data;
     }
     async stable(home){

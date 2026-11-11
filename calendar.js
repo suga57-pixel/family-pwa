@@ -7,6 +7,7 @@
   const dateLabel = key => `${Number(key.slice(0,4))}年${Number(key.slice(5,7))}月${Number(key.slice(8))}日`;
   const stamp = value => value ? `${C.day(value)} ${C.time(value)}` : '記録なし';
   function errorText(error) {
+    if (error.code === '42703' || error.code === 'PGRST204') return 'DBの公開範囲列を確認できません。公開範囲の追加SQLを適用してから再取得してください。';
     if (!navigator.onLine) return 'オフラインです。接続してから再取得してください。';
     if (error.code === '23505') return '同じ名前のカテゴリが既にあります。再取得して確認してください。';
     if (['23503', '23514', 'P0001'].includes(error.code)) return '入力またはカテゴリの整合性を確認できません。再取得して内容を確認してください。';
@@ -35,7 +36,7 @@
       $('household-select').disabled = this.writing || !this.homes.length;
       $('close-event').disabled = this.writing;
       $('close-category').disabled = this.writing;
-      for (const id of ['event-title','event-description','event-all-day','event-start-date','event-category']) $(id).disabled = this.writing || !!this.base?.deleted_at;
+      for (const id of ['event-title','event-description','event-all-day','event-start-date','event-category','event-visibility']) $(id).disabled = this.writing || !!this.base?.deleted_at;
       for (const id of ['event-start-time']) $(id).disabled = this.writing || !!this.base?.deleted_at || $('event-all-day').checked;
       $('category-name').disabled = this.writing; $('category-color').disabled = this.writing;
     }
@@ -95,7 +96,7 @@
         const snapshot = await this.store.snapshot(this.household);
         if (!valid()) return;
         if (!snapshot.members.some(m => m.user_id === user)) throw { code: '42501' };
-        this.events = snapshot.events; this.categories = snapshot.categories; this.members = snapshot.members;
+        this.events = snapshot.events.filter(e => C.visible(e, user)); this.categories = snapshot.categories; this.members = snapshot.members;
         this.ready = true;
         this.fillCategories(); this.render(); this.controls();
         this.sync(this.realtimeConnected ? '● リアルタイム接続中' : '同期を接続中 · 定期取得で補完');
@@ -103,7 +104,11 @@
         message('calendar-notice', `最終取得 ${C.time(new Date())} · ${homes.find(h => h.id === this.household).name} · 日本時間`);
         if (this.base && $('event-dialog').open) {
           const current = this.events.find(e => e.id === this.base.id);
-          $('remote-change').hidden = !!current && current.version === this.base.version;
+          if (!current) {
+            this.hideUnavailableEvent();
+          } else {
+            $('remote-change').hidden = current.version === this.base.version;
+          }
         }
       } catch (error) {
         if (!valid()) return;
@@ -147,6 +152,11 @@
       if (selected && !this.categories.some(c => c.id === selected)) $('event-category').add(new Option('削除済み・取得できないカテゴリ（選び直してください）', selected));
       $('event-category').value = selected;
     }
+    hideUnavailableEvent() {
+      $('event-dialog').close(); this.base = null; this.latest = null; this.dirty = false; this.conflicted = false;
+      $('event-form').reset(); $('event-metadata').textContent = ''; $('conflict-latest').textContent = '';
+      message('calendar-notice', 'この予定は表示対象ではなくなりました。');
+    }
     filtered() {
       const search = $('event-search').value.trim().normalize('NFKC').toLocaleLowerCase('ja');
       const category = $('category-filter').value, trash = $('show-trash').checked;
@@ -162,6 +172,7 @@
       const dot = el('span', '●', 'event-dot'); dot.style.color = color; dot.setAttribute('aria-hidden', 'true');
       let clock = event.all_day ? '終日' : C.time(event.starts_at);
       if (key && C.day(event.starts_at) < key) clock = event.all_day ? '終日' : '継続';
+      if (event.is_private) button.append(el('span', '自分専用', 'private-event-label'));
       button.append(dot, el('span', `${event.all_day ? '' : clock + ' '}${event.title}`, 'event-chip-text'));
       button.title = `${author.label} · ${event.title} · ${category?.name || '未分類'} · ${stamp(event.starts_at)} 〜 ${stamp(event.ends_at)}`;
       button.addEventListener('click', () => this.openEvent(event));
@@ -169,6 +180,9 @@
     }
     render() {
       window.FamilyUI.legend($('calendar-owner-legend'), this.members, this.user);
+      const ownCount = C.counts(this.events, this.user?.id), badge = el('span', '（'+ownCount.private+'/'+ownCount.total+'）', 'event-private-count');
+      badge.title = '本人作成の自分専用予定数 / 本人作成の全予定数（ゴミ箱を含む）';
+      $('calendar-owner-legend').firstChild.append(badge);
       $('holiday-coverage').textContent = window.FamilyUI.holidayYears.includes(Number(this.anchor.slice(0,4))) ? '祝日：2026–2027年収録' : 'この年の祝日は未収録です';
       const key = this.anchor, {start, count} = C.range(key, this.mode), today = C.day(new Date());
       $('month-label').textContent = this.mode === 'month' ? `${Number(key.slice(0,4))}年 ${Number(key.slice(5,7))}月` : this.mode === 'week' ? `${dateLabel(start)} 〜 ${Number(C.addDays(start,6).slice(5,7))}/${Number(C.addDays(start,6).slice(8))}` : dateLabel(key);
@@ -203,6 +217,7 @@
             matches.slice(0,3).forEach((event, index) => {
               const label = el('span', event.title, 'month-event-title'); label.setAttribute('data-title-index',String(index));
               const author = window.FamilyUI.mark(label, event.created_by, this.members, this.user);
+              if (event.is_private) label.append(el('span', ' 自分専用', 'private-event-label'));
               label.title = `${author.label}：${event.title}`; head.append(label);
             });
             if (matches.length > 1) head.append(el('span', `＋${matches.length - 1}`, 'month-more more-short'));
@@ -226,13 +241,15 @@
       return id === this.user?.id ? `自分（${id}）` : this.members.some(m => m.user_id === id) ? `共有メンバー（${id}）` : `ユーザー（${id}）`;
     }
     openEvent(event = null, key = this.anchor) {
-      if (!this.ready || this.writing) return;
+      if (!this.ready || this.writing || (event && !C.visible(event, this.user?.id))) return;
       this.base = event ? { ...event } : null; this.draftId = event?.id || crypto.randomUUID();
       this.latest = null; this.conflicted = false; this.dirty = false;
       $('event-form').reset(); this.fillCategories();
       $('event-dialog-title').textContent = `${Number((event ? C.day(event.starts_at) : key).slice(5,7))}/${Number((event ? C.day(event.starts_at) : key).slice(8))} ${event ? event.deleted_at ? 'ゴミ箱の予定' : '予定の編集' : '予定を作成'}`;
       $('event-title').value = event?.title || '';
       $('event-description').value = event?.description || '';
+      $('event-visibility').value = event?.is_private ? 'private' : 'shared';
+      $('event-visibility').title = event && event.created_by !== this.user?.id ? '自分専用にすると、元の作成者本人の画面にのみ表示されます。' : '自分専用は作成者本人の画面にのみ表示されます。';
       $('event-all-day').checked = event ? !!event.all_day : true;
       $('event-schedule').hidden = true; $('event-options').open = false;
       $('event-start-date').value = event ? C.day(event.starts_at) : key;
@@ -243,7 +260,7 @@
       $('delete-event').hidden = !event || !!event.deleted_at;
       $('restore-event').hidden = !event?.deleted_at;
       $('save-event').hidden = !!event?.deleted_at;
-      for (const id of ['event-title','event-description','event-all-day','event-start-date','event-category']) $(id).disabled = !!event?.deleted_at;
+      for (const id of ['event-title','event-description','event-all-day','event-start-date','event-category','event-visibility']) $(id).disabled = !!event?.deleted_at;
       this.toggleAllDay(); message('event-error'); $('conflict-panel').hidden = true; $('remote-change').hidden = true;
       this.controls();
       if (!$('event-dialog').open) $('event-dialog').showModal();
@@ -252,7 +269,7 @@
     toggleAllDay() {
       const all = $('event-all-day').checked, deleted = !!this.base?.deleted_at;
       for (const id of ['event-start-time']) { $(id).disabled = all || deleted; $(id).required = !all; }
-      $('event-time-toggle').textContent = all ? '時刻指定なし' : `${$('event-start-date').value.slice(5).replace('-', '/')} ${$('event-start-time').value}`;
+      $('event-time-toggle').textContent = all ? '時間を設定する' : `${$('event-start-date').value.slice(5).replace('-', '/')} ${$('event-start-time').value}`;
       $('event-time-toggle').setAttribute('aria-expanded', String(!$('event-schedule').hidden));
     }
     closeEvent() {
@@ -277,6 +294,7 @@
           fields.ends_at = new Date(Date.parse(fields.starts_at) + duration).toISOString();
         }
       }
+      fields.is_private = $('event-visibility').value === 'private';
       return fields;
     }
     async save(action) {
@@ -293,19 +311,20 @@
       try {
         const saved = base ? await store.update(base, fields) : await store.create(this.draftId, fields);
         if (epoch !== this.epoch || house !== this.household) return;
-        this.events = this.events.filter(e => e.id !== saved.id).concat(saved);
+        this.events = this.events.filter(e => e.id !== saved.id).concat(C.visible(saved, this.user?.id) ? [saved] : []);
         this.dirty = false; $('event-dialog').close(); this.base = null;
         message('calendar-notice', action === 'delete' ? 'ゴミ箱へ移しました。ゴミ箱から復元できます。' : action === 'restore' ? '予定を復元しました。' : '予定を保存しました。');
         this.render(); this.schedule();
       } catch (error) {
         if (epoch !== this.epoch || house !== this.household) return;
         if (error instanceof window.FamilyStore.Conflict) {
-          this.latest = error.latest; this.conflicted = true;
+          const latest = C.visible(error.latest || {}, this.user?.id) && error.latest ? error.latest : null;
+          this.latest = latest; this.conflicted = true;
           $('conflict-panel').hidden = false;
-          $('conflict-latest').textContent = error.latest
-            ? `最新の内容\n${error.latest.title}\n${stamp(error.latest.starts_at)} 〜 ${stamp(error.latest.ends_at)}${error.latest.all_day ? '（終日）' : ''}\n${error.latest.description}\nカテゴリ：${this.categories.find(c => c.id === error.latest.category_id)?.name || '未分類'}\n${error.latest.deleted_at ? 'ゴミ箱にあります\n' : ''}更新：${this.person(error.latest.updated_by)}\n${stamp(error.latest.updated_at)} · version ${error.latest.version}`
+          $('conflict-latest').textContent = latest
+            ? `最新の内容\n${latest.title}\n${stamp(latest.starts_at)} 〜 ${stamp(latest.ends_at)}${latest.all_day ? '（終日）' : ''}\n${latest.description}\nカテゴリ：${this.categories.find(c => c.id === latest.category_id)?.name || '未分類'}\n${latest.deleted_at ? 'ゴミ箱にあります\n' : ''}更新：${this.person(latest.updated_by)}\n${stamp(latest.updated_at)} · version ${latest.version}`
             : '現在この予定を取得できません。削除や権限変更の可能性があります。入力をコピーしてから閉じ、再取得してください。';
-          $('load-latest').disabled = !error.latest;
+          $('load-latest').disabled = !latest;
           message('event-error', '更新の競合を検出しました。今回の変更は保存していません。');
         } else {
           message('event-error', `${errorText(error)} 保存結果が不明な場合は、再取得して確認してください。新規予定の再送には同じIDを使います。`);

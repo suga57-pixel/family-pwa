@@ -56,7 +56,7 @@
       <dialog id="event-dialog" aria-labelledby="event-dialog-title">
         <form id="event-form"><header class="dialog-heading"><div><span class="eyebrow">SHARED CALENDAR</span><h2 id="event-dialog-title">予定を作成</h2></div><button id="close-event" class="quiet" type="button" aria-label="予定を閉じる">閉じる</button></header>
           <div id="remote-change" class="remote-change" role="status" hidden>この予定に変更があります。入力中の内容は保持しています。保存時に競合を確認します。</div>
-          <button id="event-time-toggle" class="quiet schedule-toggle" type="button" aria-expanded="false" aria-controls="event-schedule">時刻指定なし</button>
+          <div class="event-scope-row"><button id="event-time-toggle" class="quiet schedule-toggle" type="button" aria-expanded="false" aria-controls="event-schedule">時間を設定する</button><label class="event-scope-label">公開範囲<select id="event-visibility" aria-label="予定の公開範囲"><option value="shared">共有</option><option value="private">自分専用</option></select></label></div>
           <section id="event-schedule" hidden aria-label="日時設定">
           <label class="check-label"><input id="event-all-day" type="checkbox">時刻を指定しない</label>
           <p class="field-hint">日本時間で入力します。</p>

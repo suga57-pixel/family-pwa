@@ -42,5 +42,7 @@
     return event.all_day && Date.parse(event.ends_at) > Date.parse(event.starts_at)
       ? day(Date.parse(event.ends_at) - 1) : day(event.ends_at);
   }
-  window.FamilyCore = Object.freeze({ zone, day, time, addDays, instant, weekday, range, move, overlaps, payload, displayEnd });
+  const visible = (event, user) => !!user && (!event.is_private || event.created_by === user);
+  const counts = (events, user) => { const own = events.filter(e => e.created_by === user); return { private: own.filter(e => e.is_private).length, total: own.length }; };
+  window.FamilyCore = Object.freeze({ visible, counts, zone, day, time, addDays, instant, weekday, range, move, overlaps, payload, displayEnd });
 })();
