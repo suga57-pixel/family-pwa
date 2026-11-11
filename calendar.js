@@ -172,6 +172,7 @@
       const dot = el('span', '●', 'event-dot'); dot.style.color = color; dot.setAttribute('aria-hidden', 'true');
       let clock = event.all_day ? '終日' : C.time(event.starts_at);
       if (key && C.day(event.starts_at) < key) clock = event.all_day ? '終日' : '継続';
+      button.dataset.private = String(!!event.is_private);
       if (event.is_private) button.append(el('span', '自分専用', 'private-event-label'));
       button.append(dot, el('span', `${event.all_day ? '' : clock + ' '}${event.title}`, 'event-chip-text'));
       button.title = `${author.label} · ${event.title} · ${category?.name || '未分類'} · ${stamp(event.starts_at)} 〜 ${stamp(event.ends_at)}`;
@@ -214,14 +215,13 @@
         const matches = events.filter(e => C.overlaps(e, date));
         if (this.mode === 'month') {
           if (matches.length) {
-            matches.slice(0,3).forEach((event, index) => {
+            matches.slice(0,4).forEach((event, index) => {
               const label = el('span', event.title, 'month-event-title'); label.setAttribute('data-title-index',String(index));
               const author = window.FamilyUI.mark(label, event.created_by, this.members, this.user);
-              if (event.is_private) label.append(el('span', ' 自分専用', 'private-event-label'));
+              label.dataset.private = String(!!event.is_private);
               label.title = `${author.label}：${event.title}`; head.append(label);
             });
-            if (matches.length > 1) head.append(el('span', `＋${matches.length - 1}`, 'month-more more-short'));
-            if (matches.length > 3) head.append(el('span', `＋${matches.length - 3}`, 'month-more more-tall'));
+            if (matches.length > 4) head.append(el('span', `＋${matches.length - 4}`, 'month-more'));
           }
           head.setAttribute('aria-label', `${dateLabel(date)}${holiday ? '、'+holiday : ''}、${matches.map(e=>e.title).join('、') || '予定なし'}。日表示を開く`);
           grid.append(cell); continue;
