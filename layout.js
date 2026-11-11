@@ -9,7 +9,7 @@
   const fetched = new Map();
   const renderBrand = () => {
     const view = document.querySelector('[data-view][aria-current]')?.dataset.view || 'calendar';
-    brandLabel.textContent = `[最終取得:${fetched.get(view) || '----/--/-- --:--'}_vol_1.2.1]`;
+    brandLabel.textContent = `[最終取得:${fetched.get(view) || '----/--/-- --:--'}_vol_1.2.2]`;
   };
   for (const view of ['calendar', 'notes', 'checklists']) {
     const notice = $(`${view}-notice`);

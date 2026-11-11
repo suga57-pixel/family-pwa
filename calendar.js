@@ -203,6 +203,7 @@
         return;
       }
       grid.className = `calendar-grid mode-${this.mode}`;
+      const weekRows = Array(6).fill(0);
       if (this.mode === 'month') for (const [i, name] of ['日','月','火','水','木','金','土'].entries()) grid.append(el('div', name, `weekday ${i === 0 ? 'sunday' : i === 6 ? 'saturday' : ''}`));
       for (let i = 0; i < count; i++) {
         const date = C.addDays(start, i), wd = C.weekday(date), holiday = window.FamilyUI.holiday(date);
@@ -214,6 +215,7 @@
         head.addEventListener('click', () => { if (this.mode === 'month') { this.mode = 'day'; this.anchor = date; this.render(); } else this.openEvent(null, date); }); cell.append(head);
         const matches = events.filter(e => C.overlaps(e, date));
         if (this.mode === 'month') {
+          weekRows[Math.floor(i / 7)] = Math.max(weekRows[Math.floor(i / 7)], Math.min(4, matches.length));
           if (matches.length) {
             matches.slice(0,4).forEach((event, index) => {
               const label = el('span', event.title, 'month-event-title'); label.setAttribute('data-title-index',String(index));
@@ -235,6 +237,9 @@
         if (!matches.length && this.mode !== 'month') cell.append(el('p','予定はありません','day-empty'));
         grid.append(cell);
       }
+      // Each week keeps just enough room for its busiest day. CSS shares the
+      // remaining screen height; scrolling starts only when all minima exceed it.
+      weekRows.forEach((rows, week) => grid.style.setProperty(`--week-${week}-min`, `${Math.max(44, 28 + rows * 19)}px`));
     }
     person(id) {
       if (!id) return '記録なし';

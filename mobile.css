@@ -30,7 +30,7 @@ input,select,textarea{font-size:16px!important}
 .view-tabs button{min-width:44px;padding:4px 8px}
 .calendar-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
 .calendar-scroll:has(>.calendar-grid[hidden]){display:none}
-.calendar-grid.mode-month{height:100%;min-height:696px;grid-template-rows:24px repeat(6,minmax(112px,1fr));grid-template-columns:repeat(7,minmax(0,1fr))}
+.calendar-grid.mode-month{height:100%;min-height:288px;grid-template-rows:24px minmax(var(--week-0-min,44px),1fr) minmax(var(--week-1-min,44px),1fr) minmax(var(--week-2-min,44px),1fr) minmax(var(--week-3-min,44px),1fr) minmax(var(--week-4-min,44px),1fr) minmax(var(--week-5-min,44px),1fr);grid-template-columns:repeat(7,minmax(0,1fr))}
 .mode-month .weekday{padding:3px 0;font-size:12px}
 .calendar-grid.mode-month .day{min-height:0;padding:0;overflow:hidden}
 .mode-month .day-head{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:0;min-height:44px;height:100%;padding:0;font-size:14px}
@@ -103,10 +103,10 @@ dialog,#note-dialog,#item-dialog{position:fixed;top:calc(var(--app-top,0px) + en
 .loading{min-height:100dvh}
 @media(min-width:700px){.workspace{padding-left:18px;padding-right:18px}.note-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}.note-card{min-height:110px}}
 @media(max-width:360px){.workspace{padding-left:4px;padding-right:4px}.calendar-actions{gap:4px;padding-left:4px;padding-right:4px}.calendar-actions>button{padding-left:7px;padding-right:7px}}
-@media(max-height:520px){.calendar-grid.mode-month{min-height:696px}.workspace{padding-top:4px}.sidebar{height:48px}.sidebar nav button{min-height:44px}.workspace{padding-bottom:calc(60px + env(safe-area-inset-bottom))}}
+@media(max-height:520px){.calendar-grid.mode-month{min-height:288px}.workspace{padding-top:4px}.sidebar{height:48px}.sidebar nav button{min-height:44px}.workspace{padding-bottom:calc(60px + env(safe-area-inset-bottom))}}
 
 .event-scope-row{display:flex;align-items:center;gap:10px;margin:8px 0}.event-scope-row .schedule-toggle{width:auto;flex:1;min-width:0;margin:0}.event-scope-label{display:flex;align-items:center;gap:6px;margin:0;padding:4px 8px;border:1px solid #d4a72c;border-radius:9px;background:#fef3c7;color:#713f12;font-size:12px;white-space:nowrap}.event-scope-label select{width:auto;min-width:0;background:#fef9df;color:#713f12;border-color:#d4a72c;padding:6px;font-size:14px}.private-event-label{background:#fef3c7;color:#713f12;border-radius:4px;padding:1px 4px;font-size:10px;white-space:nowrap}.event-private-count{white-space:nowrap}
 
-/* Four event rows remain visible on short phone screens; the month scrolls. */
+/* Week heights adapt to events; overflow scrolls only when minimum heights do not fit. */
 .mode-month .day-head{justify-content:flex-start;padding-top:2px}.mode-month .day-head time{flex-shrink:0}.month-event-title{flex-shrink:0}
 html .event-chip[data-private="true"],html .month-event-title[data-private="true"]{--author-bg:#fef3c7;--author-text:#713f12;--author-line:#d4a72c;background:#fef3c7;color:#713f12;border-color:#d4a72c}
