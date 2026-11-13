@@ -29,6 +29,7 @@
   <script src="./backup.js" defer></script>
   <link rel="stylesheet" href="./mobile.css">
   <script src="./layout.js" defer></script>
+  <script src="./activity.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
@@ -104,7 +105,7 @@
 <button id="backup-import" type="button" class="primary" disabled>確認した内容で追加する</button>
 <p id="backup-status" role="status" aria-live="polite"></p><button id="backup-report" type="button" class="quiet" disabled>実行記録を保存する</button>
 </dialog>
-      <dialog id="settings-dialog" aria-labelledby="settings-title"><header class="dialog-heading"><h2 id="settings-title">設定</h2><button class="quiet" id="settings-close" type="button">閉じる</button></header><div id="settings-account"></div><div id="settings-theme"></div><div id="settings-groups"></div></dialog>
+      <dialog id="settings-dialog" aria-labelledby="settings-title"><header class="dialog-heading"><h2 id="settings-title">設定</h2><button class="quiet" id="settings-close" type="button">閉じる</button></header><div id="settings-account"></div><div id="settings-theme"></div><p id="settings-activity" role="status"></p><div id="settings-groups"></div></dialog>
       <footer>Family <span>暮らしを、いっしょに。</span></footer>
     </main>
   </div>

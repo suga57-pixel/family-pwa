@@ -110,3 +110,8 @@ dialog,#note-dialog,#item-dialog{position:fixed;top:calc(var(--app-top,0px) + en
 /* Week heights adapt to events; overflow scrolls only when minimum heights do not fit. */
 .mode-month .day-head{justify-content:flex-start;padding-top:2px}.mode-month .day-head time{flex-shrink:0}.month-event-title{flex-shrink:0}
 html .event-chip[data-private="true"],html .month-event-title[data-private="true"]{--author-bg:#fef3c7;--author-text:#713f12;--author-line:#d4a72c;background:#fef3c7;color:#713f12;border-color:#d4a72c}
+
+.activity-warning { color: #d92121; font-size: .85rem; font-weight: 700; white-space: nowrap; }
+.sidebar .brand { display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 5px; row-gap: 0; align-content: center; }
+.sidebar .brand .shiba-mark { grid-column: 1; grid-row: 1 / span 2; }
+.brand-fetch, .activity-warning { grid-column: 2; }

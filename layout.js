@@ -6,27 +6,18 @@
   const icon = document.createElement('img'); icon.src = './icons/shiba.png'; icon.alt = '黒柴'; icon.className = 'shiba-mark'; icon.width = 32; icon.height = 32;
   const brandLabel = document.createElement('span'); brandLabel.className = 'brand-fetch';
   brand.replaceChildren(icon, brandLabel);
-  const fetched = new Map();
-  const renderBrand = () => {
-    const view = document.querySelector('[data-view][aria-current]')?.dataset.view || 'calendar';
-    brandLabel.textContent = `[最終取得:${fetched.get(view) || '----/--/-- --:--'}_vol_1.2.2]`;
-  };
+  const warning = document.createElement('span');
+  warning.id = 'activity-warning'; warning.className = 'activity-warning';
+  warning.hidden = true; warning.setAttribute('role', 'status'); brand.append(warning);
   for (const view of ['calendar', 'notes', 'checklists']) {
-    const notice = $(`${view}-notice`);
-    const update = () => {
-      const isFetch = notice.textContent.startsWith('最終取得 ');
-      if (isFetch) {
-        const parts = new Intl.DateTimeFormat('en-US', {timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
-        const value = type => parts.find(p=>p.type===type).value;
-        fetched.set(view, `${value('year')}/${value('month')}/${value('day')} ${value('hour')}:${value('minute')}`);
+    const notice = $(view + '-notice');
+    new MutationObserver(() => {
+      if (notice.textContent.startsWith('最終取得 ')) {
         notice.hidden = true;
+        window.FamilyActivity?.refresh();
       } else if (notice.textContent) notice.hidden = false;
-      renderBrand();
-    };
-    new MutationObserver(update).observe(notice, {childList:true,subtree:true,characterData:true});
+    }).observe(notice, {childList:true,subtree:true,characterData:true});
   }
-  new MutationObserver(renderBrand).observe(document.querySelector('.sidebar nav'), {subtree:true,attributes:true,attributeFilter:['aria-current']});
-  renderBrand();
   const settings = $('settings-dialog');
   const closeSettings = () => settings.close();
   $('settings-open').addEventListener('click', () => { navUpdate(); settings.showModal(); });
@@ -105,6 +96,6 @@
   window.visualViewport?.addEventListener('scroll', resize);
   window.addEventListener('resize', resize); resize();
   new MutationObserver(() => {
-    if ($('app').hidden) { fetched.clear(); renderBrand(); for (const d of document.querySelectorAll('dialog[open]')) d.close(); }
+    if ($('app').hidden) { for (const d of document.querySelectorAll('dialog[open]')) d.close(); }
   }).observe($('app'), {attributes:true,attributeFilter:['hidden']});
 })();

@@ -36,6 +36,7 @@
   function showSession(next) {
     const wasLoggedIn = !!session;
     session = next;
+    window.FamilyActivity.setSession(client, next);
     calendar.setSession(client, next);
     notes.setSession(client, next);
     backup.setSession(client, next);
